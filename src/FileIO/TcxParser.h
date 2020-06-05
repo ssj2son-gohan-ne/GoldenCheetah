@@ -66,7 +66,6 @@ private:
 
     bool   first; // first ride found, when it may contain collections!
     bool   creator;
-    bool   training; // second training name
 
     double power;
     double cadence;
