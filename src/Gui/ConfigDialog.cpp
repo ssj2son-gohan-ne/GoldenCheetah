@@ -340,6 +340,25 @@ AthleteConfig::AthleteConfig(QDir home, Context *context) :
     HelpWhatsThis *backupPageHelp = new HelpWhatsThis(backupPage);
     autoImportPage->setWhatsThis(backupPageHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_Backup));
 
+// Gear
+    //gearPage = new GearPage(this, context);
+    gearPage = new GearPage(context);
+    HelpWhatsThis *gearHelp = new HelpWhatsThis(gearPage);
+    gearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
+
+    //swimGearPage = new SwimGearPage(this, context);
+    //HelpWhatsThis *swimGearPageHelp = new HelpWhatsThis(swimGearPage);
+    //swimGearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
+
+    //bikeGearPage = new BikeGearPage(this, context);
+    //HelpWhatsThis *bikeGearPageHelp = new HelpWhatsThis(bikeGearPage);
+    //bikeGearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
+
+    //runGearPage = new RunGearPage(this, context);
+    //HelpWhatsThis *runGearPageHelp = new HelpWhatsThis(runGearPage);
+    //runGearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
+// Gear
+
     setContentsMargins(0,0,0,0);
     QHBoxLayout *mainLayout = new QHBoxLayout(this);
     mainLayout->setSpacing(0);
@@ -363,6 +382,14 @@ AthleteConfig::AthleteConfig(QDir home, Context *context) :
     tabs->addTab(autoImportPage, tr("Auto Import"));
     tabs->addTab(backupPage, tr("Backup"));
 
+// Gear
+    //QTabWidget *gearTab = new QTabWidget(this);
+    //gearTab->addTab(swimGearPage, tr("Swimming Gear"));
+    //gearTab->addTab(rideGearPage, tr("Cycling Gear"));
+    //gearTab->addTab(runGearPage, tr("Running Gear"));
+    tabs->addTab(gearPage, tr("Gear"));
+    //tabs->addTab(gearTab, tr("GearTab"));
+
     mainLayout->addWidget(tabs);
 }
 
@@ -380,6 +407,13 @@ qint32 AthleteConfig::saveClicked()
     state |= credentialsPage->saveClicked();
     state |= autoImportPage->saveClicked();
     state |= backupPage->saveClicked();
+
+// Gear
+    //state |= gearPage->saveClicked();
+    state |= swimGearPage->saveClicked();
+    state |= bikeGearPage->saveClicked();
+    state |= runGearPage->saveClicked();
+// Gear
 
     return state;
 }
