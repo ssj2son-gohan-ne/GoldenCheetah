@@ -6765,3 +6765,1177 @@ IntervalsPage::saveClicked()
     if (b4.discovery != discovery) return CONFIG_DISCOVERY;
     else return 0;
 }
+
+//
+// Gear
+//
+
+GearPage::GearPage(Context *context) : context(context)
+{
+
+    QVBoxLayout *layout = new QVBoxLayout(this);
+    QHBoxLayout *hlayout = new QHBoxLayout;
+    QGridLayout *gearGrid = new QGridLayout;
+    Qt::Alignment alignment = Qt::AlignLeft|Qt::AlignVCenter;
+
+#ifdef Q_OS_MAX
+    setContentsMargins(10,10,10,10);
+    gearGrid->setSpacing(5 *dpiXFactor);
+    layout->setSpacing(5 *dpiXFactor);
+#endif
+
+    QLabel *defaultGearLabel = new QLabel(tr("Default Gear for"), this);
+
+    QLabel *defaultswimgearlabel = new QLabel(tr("Swim"));
+    defaultswimgear = new QComboBox(this);
+    defaultswimgear->addItem(tr("Pool"));
+    defaultswimgear->addItem(tr("Openwater"));
+    //if(defaultswimgear.toString() == "Pool") defaultswimgear->setCurrentIndex(0);
+    //if(defaultswimgear.toString() == "Openwater") defaultswimgear->setCurrentIndex(1);
+
+    QLabel *defaultridegearlabel = new QLabel(tr("Bike"));
+    defaultridegear = new QComboBox(this);
+    defaultridegear->addItem(tr("Mountainbike"));
+    defaultridegear->addItem(tr("Roadbike"));
+    defaultridegear->addItem(tr("Crono/Time Trail"));
+
+    QLabel *defaultrungearlabel = new QLabel(tr("Run"));
+    defaultrungear = new QComboBox(this);
+    defaultrungear->addItem(tr("Streetshoe"));
+    defaultrungear->addItem(tr("Trailshoe"));
+
+    QHBoxLayout *defaultGearLayout = new QHBoxLayout();
+    defaultGearLayout->addWidget(defaultswimgearlabel);
+    defaultGearLayout->addWidget(defaultswimgear);
+    defaultGearLayout->addWidget(defaultridegearlabel);
+    defaultGearLayout->addWidget(defaultridegear);
+    defaultGearLayout->addWidget(defaultrungearlabel);
+    defaultGearLayout->addWidget(defaultrungear);
+
+    QGridLayout *defaultGrid = new QGridLayout;
+    defaultGrid->addWidget(defaultGearLabel, 1, 0, alignment);
+    defaultGrid->addLayout(defaultGearLayout, 1, 1, 1, 2, alignment);
+
+    layout->addLayout(defaultGrid);
+    layout->addSpacing(2);
+
+    //QFrame *line;
+    //line = new QFrame;
+    //line->setFrameShape(QFrame::HLine);
+    //line->setFrameShadow(QFrame::Sunken);
+    //layout->addWidget(line);
+
+    layout->addLayout(hlayout);
+    geartabs = new QTabWidget(this);
+    layout->addWidget(geartabs);
+
+    swimGearPage = new SwimGearPage(context);
+    bikeGearPage = new BikeGearPage(context);
+    runGearPage = new RunGearPage(context);
+
+    geartabs->clear();
+    geartabs->addTab(swimGearPage, tr("Swim"));
+    //geartabs->addTab(bikeGearPage, tr("Bike"));
+    //geartabs->addTab(runGearPage, tr("Run"));
+
+}
+
+//qint32
+//GearPage::saveClicked()
+//{
+    //appsettings->setCValue(context->athlete->cyclist, GC_NICKNAME, nickname->text());
+    //appsettings->setCValue(context->athlete->cyclist, GC_DOB, dob->date());
+
+
+    //appsettings->setCValue(context->athlete->cyclist, GC_SWIMGEAR, defaultswimgear->currentIndex());
+    //avatar.save(context->athlete->home->config().canonicalPath() + "/" + "avatar.png", "PNG");
+    //appsettings->setCValue(context->athlete->cyclist, GC_HEIGHT, height->value() * (metricUnits ? 1.0/100.0 : CM_PER_INCH/100.0));
+
+    //appsettings->setCValue(context->athlete->cyclist, GC_CRANKLENGTH, crankLengthCombo->currentText());
+    //appsettings->setCValue(context->athlete->cyclist, GC_WHEELSIZE, wheelSizeEdit->text().toInt());
+
+//    qint32 state=0;
+
+    // default height changed ?
+    //if (b4.height != appsettings->cvalue(context->athlete->cyclist, GC_HEIGHT).toDouble()) {
+    //    state += CONFIG_ATHLETE;
+    //}
+
+    // general stuff changed ?
+    //if (b4.wheel != wheelSizeEdit->text().toInt() ||
+    //    b4.crank != crankLengthCombo->currentIndex() )
+    //    state += CONFIG_GENERAL;
+
+    //return state;
+
+//        unsigned long fingerprint = 0;
+    //foreach (GearMeasure gm, gearMG) {
+        //fingerprint += gm.getFingerprint();
+    //}
+//    if (fingerprint != b4.fingerprint) {
+        // store in athlete
+        //GearMG* pGearWears = dynamic_cast <GearMG*>(context->athlete->measures->getGroup(Measures::GearMGT));
+        //pGearWears->setGearMG(GearMG);
+        // now save data away if we actually got something !
+        //pGearWears->write();
+    //    state += CONFIG_ATHLETE;
+//    };
+//}
+
+
+// Swim Gear
+SwimGearPage::SwimGearPage(Context *context) : context(context)
+{
+    active = true;
+
+    metricUnits = context->athlete->useMetricUnits;
+    const double swimGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+    QString swimGearUnits = (metricUnits ? tr(" kg") : tr(" lb"));
+
+    QVBoxLayout *all = new QVBoxLayout(this);
+    QGridLayout *swimGearGrid = new QGridLayout;
+    Qt::Alignment alignment = Qt::AlignLeft|Qt::AlignVCenter;
+
+#ifdef Q_OS_MAX
+    setContentsMargins(10,10,10,10);
+    grid->setSpacing(5 *dpiXFactor);
+    all->setSpacing(5 *dpiXFactor);
+#endif
+
+    QLabel* seperatorText = new QLabel(tr("Time dependent measurements"));
+    all->addWidget(seperatorText);
+
+    QString dateTimetext = tr("From Date - Time");
+    dateLabel = new QLabel(dateTimetext);
+    dateTimeEdit = new QDateTimeEdit;
+    dateTimeEdit->setDateTime(QDateTime::currentDateTime());
+    dateTimeEdit->setCalendarPopup(true);
+
+    QString glassesvendortext = tr("Vendor");
+    glassesvendorlabel = new QLabel(glassesvendortext);
+    glassesvendor = new QLineEdit(this);
+    glassesvendor->setText("");
+
+    QString glassesmodeltext = tr("Model");
+    glassesmodellabel = new QLabel(glassesmodeltext);
+    glassesmodel = new QLineEdit(this);
+    glassesmodel->setText("");
+
+    QString glassestypetext = tr("Type of Glasses");
+    glassestypelabel = new QLabel(glassestypetext);
+    glassestype = new QLineEdit(this);
+    glassestype->setText("");
+    //QLabel *glassestypelabel = new QLabel(tr("Type of Glasses"));
+    //glassestype = new QComboBox(this);
+    //glassestype->addItem(tr("Mountainglasses"));
+    //glassestype->addItem(tr("Roadglasses"));
+    //glassestype->addItem(tr("Crono/ITT"));
+
+    //QString glassesweightkgtext = context->athlete->measures->getFieldNames(Measures::GearMGT).at(GearMeasure::GlassesWeightKg);
+    QString glassesweightkgtext = tr("Weight of Glasses");
+    glassesweightkglabel = new QLabel(glassesweightkgtext);
+    glassesweightkg = new QDoubleSpinBox(this);
+    glassesweightkg->setMaximum(999.9);
+    glassesweightkg->setMinimum(0.0);
+    glassesweightkg->setDecimals(1);
+    glassesweightkg->setValue(0.0);
+    glassesweightkg->setSuffix(swimGearUnits);
+
+    QString commenttext = tr("Comment");
+    commentlabel = new QLabel(commenttext);
+    comment = new QLineEdit(this);
+    comment->setText("");
+
+    swimGearGrid->addWidget(dateLabel, 1, 0, alignment);
+    swimGearGrid->addWidget(dateTimeEdit, 1, 1, alignment);
+
+    swimGearGrid->addWidget(glassesvendorlabel, 2, 0, alignment);
+    swimGearGrid->addWidget(glassesvendor, 2, 1, alignment);
+
+    swimGearGrid->addWidget(glassesmodellabel, 3, 0, alignment);
+    swimGearGrid->addWidget(glassesmodel, 3, 1, alignment);
+
+    swimGearGrid->addWidget(glassestypelabel, 4, 0, alignment);
+    swimGearGrid->addWidget(glassestype, 4, 1, alignment);
+
+    swimGearGrid->addWidget(glassesweightkglabel, 5, 0, alignment);
+    swimGearGrid->addWidget(glassesweightkg, 5, 1, alignment);
+
+    swimGearGrid->addWidget(commentlabel, 6, 0, alignment);
+    swimGearGrid->addWidget(comment, 6, 1, alignment);
+
+    all->addLayout(swimGearGrid);
+
+    // Buttons
+    updateButton = new QPushButton(tr("Update"));
+    updateButton->hide();
+    addButton = new QPushButton(tr("+"));
+    deleteButton = new QPushButton(tr("-"));
+#ifndef Q_OS_MAC
+    addButton->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+    deleteButton->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+#else
+    updateButton->setText(tr("Update"));
+    addButton->setText(tr("Add"));
+    deleteButton->setText(tr("Delete"));
+#endif
+
+    QHBoxLayout *actionButtons = new QHBoxLayout;
+    actionButtons->setSpacing(2 *dpiXFactor);
+    actionButtons->addStretch();
+    actionButtons->addWidget(updateButton);
+    actionButtons->addWidget(addButton);
+    actionButtons->addWidget(deleteButton);
+    all->addLayout(actionButtons);
+
+    // Gear Measures
+    swimGearTree = new QTreeWidget;
+    swimGearTree->headerItem()->setText(0, dateTimetext);
+    swimGearTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(1, glassesvendortext);
+    swimGearTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(2, glassesmodeltext);
+    swimGearTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(3, glassestypetext);
+    swimGearTree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(4, glassesweightkgtext);
+    swimGearTree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(5, commenttext);
+    swimGearTree->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(6, tr("source"));
+    swimGearTree->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    swimGearTree->headerItem()->setText(7, tr("Original source"));
+    swimGearTree->setColumnCount(8);
+    swimGearTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    swimGearTree->setEditTriggers(QAbstractItemView::SelectedClicked); // allow edit
+    swimGearTree->setUniformRowHeights(true);
+    swimGearTree->setIndentation(0);
+
+    // get gear if the file exists
+    QFile swimGearFile(QString("%1/gear_swim.json").arg(context->athlete->home->config().canonicalPath()));
+    if (swimGearFile.exists()) {
+        SwimGearMeasureParser::unserialize(swimGearFile, swimGearMG);
+    }
+    qSort(swimGearMG); // date order
+
+    // setup swimGearTree
+    for (int i=0; i<swimGearMG.count(); i++) {
+        QTreeWidgetItem *add = new QTreeWidgetItem(swimGearTree->invisibleRootItem());
+        add->setFlags(add->flags() & ~Qt::ItemIsEditable);
+        // date & time
+        add->setText(0, swimGearMG[i].when.toString(tr("MMM d, yyyy - hh:mm:ss")));
+        // glasses specifications
+        add->setText(1, swimGearMG[i].glassesvendor);
+        add->setText(2, swimGearMG[i].glassesmodel);
+        add->setText(3, swimGearMG[i].glassestype);
+        add->setText(4, QString("%1").arg(swimGearMG[i].glassesweightkg * swimGearWeightFactor, 0, 'f', 1));
+        add->setText(5, swimGearMG[i].comment);
+        // source
+        add->setText(6, swimGearMG[i].getSourceDescription());
+        add->setText(7, swimGearMG[i].originalSource);
+    }
+
+    all->addWidget(swimGearTree);
+
+    // set default edit values to newest gearmeasurement (if one exists)
+    if (swimGearMG.count() > 0) {
+        glassesweightkg->setValue(swimGearMG.last().glassesweightkg * swimGearWeightFactor);
+    }
+
+    // edit connect
+    connect(dateTimeEdit, SIGNAL(dateTimeChanged(QDateTime)), this, SLOT(rangeEdited()));
+    connect(glassesvendor, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(glassesmodel, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(glassestype, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(glassesweightkg, SIGNAL(valueChanged(double)), this, SLOT(rangeEdited()));
+    connect(comment, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+
+    // button connect
+    connect(updateButton, SIGNAL(clicked()), this, SLOT(addOReditClicked()));
+    connect(addButton, SIGNAL(clicked()), this, SLOT(addOReditClicked()));
+    connect(deleteButton, SIGNAL(clicked()), this, SLOT(deleteClicked()));
+
+    // list selection connect
+    connect(swimGearTree, SIGNAL(itemSelectionChanged()), this, SLOT(rangeSelectionChanged()));
+
+    // save initial values for things we care about
+    // defaultvendor as stored (always metric) and GearMG checksum
+    //b4.defaultGear = appsettings->cvalue(context->athlete->cyclist, GC_WEIGHT).toDouble();
+    b4.fingerprint = 0;
+    foreach (SwimGearMeasure sgm, swimGearMG) {
+        b4.fingerprint += sgm.getFingerprint();
+    }
+}
+
+void
+SwimGearPage::unitChanged(int currentIndex)
+{
+    if (currentIndex == 0) {
+        metricUnits = true;
+        glassesweightkg->setValue(glassesweightkg->value() / LB_PER_KG);
+    } else {
+        metricUnits = false;
+        glassesweightkg->setValue(glassesweightkg->value() * LB_PER_KG);
+   }
+
+    QString swimGearUnits = (metricUnits ? tr(" kg") : tr(" lb"));
+    glassesweightkg->setSuffix(swimGearUnits);
+
+    // update swimGearTree
+    const double swimGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+    for (int i=0; i<swimGearTree->invisibleRootItem()->childCount(); i++) {
+        QTreeWidgetItem *edit = swimGearTree->invisibleRootItem()->child(i);
+        // gear weight
+        edit->setText(1, QString("%1").arg(swimGearMG[i].glassesweightkg * swimGearWeightFactor, 0, 'f', 1));
+    }
+}
+
+qint32
+SwimGearPage::saveClicked()
+{
+    //appsettings->setCValue(context->athlete->cyclist, GC_WEIGHT, defaultGear->value() * (metricUnits ? 1.0 : KG_PER_LB));
+
+    qint32 state=0;
+
+    // default defaultvendor changed ?
+    //if (b4.defaultGear != appsettings->cvalue(context->athlete->cyclist, GC_WEIGHT).toDouble()) {
+    //    state += CONFIG_ATHLETE;
+    //}
+
+    // Gear Measures changed ?
+    unsigned long fingerprint = 0;
+    foreach (SwimGearMeasure sgm, swimGearMG) {
+        fingerprint += sgm.getFingerprint();
+    }
+    if (fingerprint != b4.fingerprint) {
+        // store in athlete
+        SwimGearMG* pSwimGear = dynamic_cast <SwimGearMG*>(context->athlete->measures->getGroup(Measures::SwimGearMGT));
+        pSwimGear->setSwimGearMG(swimGearMG);
+        // now save data away if we actually got something !
+        pSwimGear->write();
+        state += CONFIG_ATHLETE;
+    }
+
+    return state;
+}
+
+void
+SwimGearPage::addOReditClicked()
+{
+    const double swimGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    int index;
+    QTreeWidgetItem *add;
+    SwimGearMeasure addSgm;
+    QString dateTimeTxt = dateTimeEdit->dateTime().toString(tr("MMM d, yyyy - hh:mm:ss"));
+
+    // if an entry for this date & time already exists, edit item otherwise add new
+    QList<QTreeWidgetItem*> matches = swimGearTree->findItems(dateTimeTxt, Qt::MatchExactly, 0);
+    if (matches.count() > 0) {
+        // edit existing
+        add = matches[0];
+        index = swimGearTree->invisibleRootItem()->indexOfChild(matches[0]);
+        swimGearMG.removeAt(index);
+    } else {
+        // add new
+        index = swimGearMG.count();
+        add = new QTreeWidgetItem;
+        add->setFlags(add->flags() & ~Qt::ItemIsEditable);
+        swimGearTree->invisibleRootItem()->insertChild(index, add);
+    }
+
+    addSgm.when = dateTimeEdit->dateTime().toUTC();
+    addSgm.glassesvendor = glassesvendor->text();
+    addSgm.glassesmodel = glassesmodel->text();
+    addSgm.glassestype = glassestype->text();
+    addSgm.glassesweightkg = glassesweightkg->value() / swimGearWeightFactor;
+    addSgm.comment = comment->text();
+    addSgm.source = SwimGearMeasure::Manual;
+    addSgm.originalSource = "";
+    swimGearMG.insert(index, addSgm);
+
+    // date and time
+    add->setText(0, dateTimeTxt);
+    // Gear specifications
+    add->setText(1, QString("%1").arg(glassesvendor->text()));
+    add->setText(2, QString("%1").arg(glassesmodel->text()));
+    add->setText(3, QString("%1").arg(glassestype->text()));
+    add->setText(4, QString("%1").arg(glassesweightkg->value()));
+    add->setText(5, QString("%1").arg(comment->text()));
+    add->setText(6, QString("%1").arg(tr("Manual entry")));
+    add->setText(7, ""); // Original source
+
+    updateButton->hide();
+}
+
+void
+SwimGearPage::deleteClicked()
+{
+    if (swimGearTree->currentItem()) {
+        int index = swimGearTree->invisibleRootItem()->indexOfChild(swimGearTree->currentItem());
+        delete swimGearTree->invisibleRootItem()->takeChild(index);
+        swimGearMG.removeAt(index);
+    }
+}
+
+void
+SwimGearPage::rangeEdited()
+{
+    const double swimGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    if (swimGearTree->currentItem()) {
+        int index = swimGearTree->invisibleRootItem()->indexOfChild(swimGearTree->currentItem());
+
+        QDateTime dateTime = dateTimeEdit->dateTime();
+        QDateTime odateTime = swimGearMG[index].when;
+
+        QString nglassesvendor = glassesvendor->text();
+        QString oglassesvendor = swimGearMG[index].glassesvendor;
+        QString nglassesmodel = glassesmodel->text();
+        QString oglassesmodel = swimGearMG[index].glassesmodel;
+        QString nglassestype = glassestype->text();
+        QString oglassestype = swimGearMG[index].glassestype;
+
+        double nglassesweightkg = glassesweightkg->value();
+        double oglassesweightkg = swimGearMG[index].glassesweightkg * swimGearWeightFactor;
+
+        QString ncomment = comment->text();
+        QString ocomment = swimGearMG[index].comment;
+
+        if (dateTime == odateTime && (nglassesvendor != oglassesvendor ||
+                                      nglassesmodel != oglassesmodel ||
+                                      nglassestype != oglassestype ||
+                                      nglassesweightkg != oglassesweightkg ||
+                                      ncomment != ocomment))
+            updateButton->show();
+        else
+            updateButton->hide();
+    }
+}
+
+void
+SwimGearPage::rangeSelectionChanged()
+{
+    const double swimGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    // fill with current details
+    if (swimGearTree->currentItem()) {
+
+        int index = swimGearTree->invisibleRootItem()->indexOfChild(swimGearTree->currentItem());
+        SwimGearMeasure current = swimGearMG[index];
+
+        dateTimeEdit->setDateTime(current.when);
+        glassesvendor->setText(current.glassesvendor);
+        glassesmodel->setText(current.glassesmodel);
+        glassestype->setText(current.glassestype);
+        glassesweightkg->setValue(current.glassesweightkg * swimGearWeightFactor);
+        comment->setText(current.comment);
+
+        updateButton->hide();
+    }
+}
+
+// Bike Gear
+BikeGearPage::BikeGearPage(Context *context) : context(context)
+{
+    active = true;
+
+    metricUnits = context->athlete->useMetricUnits;
+    const double bikeGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+    QString bikeGearUnits = (metricUnits ? tr(" kg") : tr(" lb"));
+
+    QVBoxLayout *all = new QVBoxLayout(this);
+    QGridLayout *bikeGearGrid = new QGridLayout;
+    Qt::Alignment alignment = Qt::AlignLeft|Qt::AlignVCenter;
+
+#ifdef Q_OS_MAX
+    setContentsMargins(10,10,10,10);
+    grid->setSpacing(5 *dpiXFactor);
+    all->setSpacing(5 *dpiXFactor);
+#endif
+
+    QLabel* seperatorText = new QLabel(tr("Time dependent measurements"));
+    all->addWidget(seperatorText);
+
+    QString dateTimetext = tr("From Date - Time");
+    dateLabel = new QLabel(dateTimetext);
+    dateTimeEdit = new QDateTimeEdit;
+    dateTimeEdit->setDateTime(QDateTime::currentDateTime());
+    dateTimeEdit->setCalendarPopup(true);
+
+    QString bikevendortext = tr("Vendor");
+    bikevendorlabel = new QLabel(bikevendortext);
+    bikevendor = new QLineEdit(this);
+    bikevendor->setText("");
+
+    QString bikemodeltext = tr("Model");
+    bikemodellabel = new QLabel(bikemodeltext);
+    bikemodel = new QLineEdit(this);
+    bikemodel->setText("");
+
+    QString biketypetext = tr("Type of Bike");
+    biketypelabel = new QLabel(biketypetext);
+    biketype = new QLineEdit(this);
+    biketype->setText("");
+    //QLabel *biketypelabel = new QLabel(tr("Type of Bike"));
+    //biketype = new QComboBox(this);
+    //biketype->addItem(tr("Mountainbike"));
+    //biketype->addItem(tr("Roadbike"));
+    //biketype->addItem(tr("Crono/ITT"));
+
+    //QString bikeweightkgtext = context->athlete->measures->getFieldNames(Measures::GearMGT).at(GearMeasure::BikeWeightKg);
+    QString bikeweightkgtext = tr("Weight of Bike");
+    bikeweightkglabel = new QLabel(bikeweightkgtext);
+    bikeweightkg = new QDoubleSpinBox(this);
+    bikeweightkg->setMaximum(999.9);
+    bikeweightkg->setMinimum(0.0);
+    bikeweightkg->setDecimals(1);
+    bikeweightkg->setValue(0.0);
+    bikeweightkg->setSuffix(bikeGearUnits);
+
+    QString commenttext = tr("Comment");
+    commentlabel = new QLabel(commenttext);
+    comment = new QLineEdit(this);
+    comment->setText("");
+
+    bikeGearGrid->addWidget(dateLabel, 1, 0, alignment);
+    bikeGearGrid->addWidget(dateTimeEdit, 1, 1, alignment);
+
+    bikeGearGrid->addWidget(bikevendorlabel, 2, 0, alignment);
+    bikeGearGrid->addWidget(bikevendor, 2, 1, alignment);
+
+    bikeGearGrid->addWidget(bikemodellabel, 3, 0, alignment);
+    bikeGearGrid->addWidget(bikemodel, 3, 1, alignment);
+
+    bikeGearGrid->addWidget(biketypelabel, 4, 0, alignment);
+    bikeGearGrid->addWidget(biketype, 4, 1, alignment);
+
+    bikeGearGrid->addWidget(bikeweightkglabel, 5, 0, alignment);
+    bikeGearGrid->addWidget(bikeweightkg, 5, 1, alignment);
+
+    bikeGearGrid->addWidget(commentlabel, 6, 0, alignment);
+    bikeGearGrid->addWidget(comment, 6, 1, alignment);
+
+    all->addLayout(bikeGearGrid);
+
+    // Buttons
+    updateButton = new QPushButton(tr("Update"));
+    updateButton->hide();
+    addButton = new QPushButton(tr("+"));
+    deleteButton = new QPushButton(tr("-"));
+#ifndef Q_OS_MAC
+    addButton->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+    deleteButton->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+#else
+    updateButton->setText(tr("Update"));
+    addButton->setText(tr("Add"));
+    deleteButton->setText(tr("Delete"));
+#endif
+
+    QHBoxLayout *actionButtons = new QHBoxLayout;
+    actionButtons->setSpacing(2 *dpiXFactor);
+    actionButtons->addStretch();
+    actionButtons->addWidget(updateButton);
+    actionButtons->addWidget(addButton);
+    actionButtons->addWidget(deleteButton);
+    all->addLayout(actionButtons);
+
+    // Gear Measures
+    bikeGearTree = new QTreeWidget;
+    bikeGearTree->headerItem()->setText(0, dateTimetext);
+    bikeGearTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(1, bikevendortext);
+    bikeGearTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(2, bikemodeltext);
+    bikeGearTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(3, biketypetext);
+    bikeGearTree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(4, bikeweightkgtext);
+    bikeGearTree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(5, commenttext);
+    bikeGearTree->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(6, tr("source"));
+    bikeGearTree->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    bikeGearTree->headerItem()->setText(7, tr("Original source"));
+    bikeGearTree->setColumnCount(8);
+    bikeGearTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    bikeGearTree->setEditTriggers(QAbstractItemView::SelectedClicked); // allow edit
+    bikeGearTree->setUniformRowHeights(true);
+    bikeGearTree->setIndentation(0);
+
+    // get gear if the file exists
+    QFile bikeGearFile(QString("%1/gear_bike.json").arg(context->athlete->home->config().canonicalPath()));
+    if (bikeGearFile.exists()) {
+        BikeGearMeasureParser::unserialize(bikeGearFile, bikeGearMG);
+    }
+
+    qSort(bikeGearMG); // date order
+
+    // setup bikeGearTree
+    for (int i=0; i<bikeGearMG.count(); i++) {
+        QTreeWidgetItem *add = new QTreeWidgetItem(bikeGearTree->invisibleRootItem());
+        add->setFlags(add->flags() & ~Qt::ItemIsEditable);
+        // date & time
+        add->setText(0, bikeGearMG[i].when.toString(tr("MMM d, yyyy - hh:mm:ss")));
+        // bike specifications
+        add->setText(1, bikeGearMG[i].bikevendor);
+        add->setText(2, bikeGearMG[i].bikemodel);
+        add->setText(3, bikeGearMG[i].biketype);
+        add->setText(4, QString("%1").arg(bikeGearMG[i].bikeweightkg * bikeGearWeightFactor, 0, 'f', 1));
+        add->setText(5, bikeGearMG[i].comment);
+        // source
+        add->setText(6, bikeGearMG[i].getSourceDescription());
+        add->setText(7, bikeGearMG[i].originalSource);
+    }
+
+    all->addWidget(bikeGearTree);
+
+    // set default edit values to newest gearmeasurement (if one exists)
+    if (bikeGearMG.count() > 0) {
+        bikeweightkg->setValue(bikeGearMG.last().bikeweightkg * bikeGearWeightFactor);
+    }
+
+    // edit connect
+    connect(dateTimeEdit, SIGNAL(dateTimeChanged(QDateTime)), this, SLOT(rangeEdited()));
+    connect(bikevendor, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(bikemodel, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(biketype, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(bikeweightkg, SIGNAL(valueChanged(double)), this, SLOT(rangeEdited()));
+    connect(comment, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+
+    // button connect
+    connect(updateButton, SIGNAL(clicked()), this, SLOT(addOReditClicked()));
+    connect(addButton, SIGNAL(clicked()), this, SLOT(addOReditClicked()));
+    connect(deleteButton, SIGNAL(clicked()), this, SLOT(deleteClicked()));
+
+    // list selection connect
+    connect(bikeGearTree, SIGNAL(itemSelectionChanged()), this, SLOT(rangeSelectionChanged()));
+
+    // save initial values for things we care about
+    // defaultvendor as stored (always metric) and GearMG checksum
+    //b4.defaultGear = appsettings->cvalue(context->athlete->cyclist, GC_WEIGHT).toDouble();
+    b4.fingerprint = 0;
+    foreach (BikeGearMeasure bgm, bikeGearMG) {
+        b4.fingerprint += bgm.getFingerprint();
+    }
+}
+
+void
+BikeGearPage::unitChanged(int currentIndex)
+{
+    if (currentIndex == 0) {
+        metricUnits = true;
+        bikeweightkg->setValue(bikeweightkg->value() / LB_PER_KG);
+    } else {
+        metricUnits = false;
+        bikeweightkg->setValue(bikeweightkg->value() * LB_PER_KG);
+   }
+
+    QString bikeGearUnits = (metricUnits ? tr(" kg") : tr(" lb"));
+    bikeweightkg->setSuffix(bikeGearUnits);
+
+    // update bikeGearTree
+    const double bikeGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+    for (int i=0; i<bikeGearTree->invisibleRootItem()->childCount(); i++) {
+        QTreeWidgetItem *edit = bikeGearTree->invisibleRootItem()->child(i);
+        // gear weight
+        edit->setText(1, QString("%1").arg(bikeGearMG[i].bikeweightkg * bikeGearWeightFactor, 0, 'f', 1));
+    }
+}
+
+qint32
+BikeGearPage::saveClicked()
+{
+    //appsettings->setCValue(context->athlete->cyclist, GC_WEIGHT, defaultGear->value() * (metricUnits ? 1.0 : KG_PER_LB));
+
+    qint32 state=0;
+
+    // default defaultvendor changed ?
+    //if (b4.defaultGear != appsettings->cvalue(context->athlete->cyclist, GC_WEIGHT).toDouble()) {
+    //    state += CONFIG_ATHLETE;
+    //}
+
+    // Gear Measures changed ?
+    unsigned long fingerprint = 0;
+    foreach (BikeGearMeasure bgm, bikeGearMG) {
+        fingerprint += bgm.getFingerprint();
+    }
+    if (fingerprint != b4.fingerprint) {
+        // store in athlete
+        BikeGearMG* pBikeGear = dynamic_cast <BikeGearMG*>(context->athlete->measures->getGroup(Measures::BikeGearMGT));
+        pBikeGear->setBikeGearMG(bikeGearMG);
+        // now save data away if we actually got something !
+        pBikeGear->write();
+        state += CONFIG_ATHLETE;
+    }
+
+    //return state;
+}
+
+void
+BikeGearPage::addOReditClicked()
+{
+    const double bikeGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    int index;
+    QTreeWidgetItem *add;
+    BikeGearMeasure addBgm;
+    QString dateTimeTxt = dateTimeEdit->dateTime().toString(tr("MMM d, yyyy - hh:mm:ss"));
+
+    // if an entry for this date & time already exists, edit item otherwise add new
+    QList<QTreeWidgetItem*> matches = bikeGearTree->findItems(dateTimeTxt, Qt::MatchExactly, 0);
+    if (matches.count() > 0) {
+        // edit existing
+        add = matches[0];
+        index = bikeGearTree->invisibleRootItem()->indexOfChild(matches[0]);
+        bikeGearMG.removeAt(index);
+    } else {
+        // add new
+        index = bikeGearMG.count();
+        add = new QTreeWidgetItem;
+        add->setFlags(add->flags() & ~Qt::ItemIsEditable);
+        bikeGearTree->invisibleRootItem()->insertChild(index, add);
+    }
+
+    addBgm.when = dateTimeEdit->dateTime().toUTC();
+    addBgm.bikevendor = bikevendor->text();
+    addBgm.bikemodel = bikemodel->text();
+    addBgm.biketype = biketype->text();
+    addBgm.bikeweightkg = bikeweightkg->value() / bikeGearWeightFactor;
+    addBgm.comment = comment->text();
+    addBgm.source = BikeGearMeasure::Manual;
+    addBgm.originalSource = "";
+    bikeGearMG.insert(index, addBgm);
+
+    // date and time
+    add->setText(0, dateTimeTxt);
+    // Gear specifications
+    add->setText(1, QString("%1").arg(bikevendor->text()));
+    add->setText(2, QString("%1").arg(bikemodel->text()));
+    add->setText(3, QString("%1").arg(biketype->text()));
+    add->setText(4, QString("%1").arg(bikeweightkg->value()));
+    add->setText(5, QString("%1").arg(comment->text()));
+    add->setText(6, QString("%1").arg(tr("Manual entry")));
+    add->setText(7, ""); // Original source
+
+    updateButton->hide();
+}
+
+void
+BikeGearPage::deleteClicked()
+{
+    if (bikeGearTree->currentItem()) {
+        int index = bikeGearTree->invisibleRootItem()->indexOfChild(bikeGearTree->currentItem());
+        delete bikeGearTree->invisibleRootItem()->takeChild(index);
+        bikeGearMG.removeAt(index);
+    }
+}
+
+void
+BikeGearPage::rangeEdited()
+{
+    const double bikeGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    if (bikeGearTree->currentItem()) {
+        int index = bikeGearTree->invisibleRootItem()->indexOfChild(bikeGearTree->currentItem());
+
+        QDateTime dateTime = dateTimeEdit->dateTime();
+        QDateTime odateTime = bikeGearMG[index].when;
+
+        QString nbikevendor = bikevendor->text();
+        QString obikevendor = bikeGearMG[index].bikevendor;
+        QString nbikemodel = bikemodel->text();
+        QString obikemodel = bikeGearMG[index].bikemodel;
+        QString nbiketype = biketype->text();
+        QString obiketype = bikeGearMG[index].biketype;
+
+        double nbikeweightkg = bikeweightkg->value();
+        double obikeweightkg = bikeGearMG[index].bikeweightkg * bikeGearWeightFactor;
+
+        QString ncomment = comment->text();
+        QString ocomment = bikeGearMG[index].comment;
+
+        if (dateTime == odateTime && (nbikevendor != obikevendor ||
+                                      nbikemodel != obikemodel ||
+                                      nbiketype != obiketype ||
+                                      nbikeweightkg != obikeweightkg ||
+                                      ncomment != ocomment))
+            updateButton->show();
+        else
+            updateButton->hide();
+    }
+}
+
+void
+BikeGearPage::rangeSelectionChanged()
+{
+    const double bikeGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    // fill with current details
+    if (bikeGearTree->currentItem()) {
+
+        int index = bikeGearTree->invisibleRootItem()->indexOfChild(bikeGearTree->currentItem());
+        BikeGearMeasure current = bikeGearMG[index];
+
+        dateTimeEdit->setDateTime(current.when);
+        bikevendor->setText(current.bikevendor);
+        bikemodel->setText(current.bikemodel);
+        biketype->setText(current.biketype);
+        bikeweightkg->setValue(current.bikeweightkg * bikeGearWeightFactor);
+        comment->setText(current.comment);
+
+        updateButton->hide();
+    }
+}
+
+// Run Gear
+RunGearPage::RunGearPage(Context *context) : context(context)
+{
+    active = true;
+
+    metricUnits = context->athlete->useMetricUnits;
+    const double runGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+    QString runGearUnits = (metricUnits ? tr(" kg") : tr(" lb"));
+
+    QVBoxLayout *all = new QVBoxLayout(this);
+    QGridLayout *runGearGrid = new QGridLayout;
+    Qt::Alignment alignment = Qt::AlignLeft|Qt::AlignVCenter;
+
+#ifdef Q_OS_MAX
+    setContentsMargins(10,10,10,10);
+    grid->setSpacing(5 *dpiXFactor);
+    all->setSpacing(5 *dpiXFactor);
+#endif
+
+    QLabel* seperatorText = new QLabel(tr("Time dependent measurements"));
+    all->addWidget(seperatorText);
+
+    QString dateTimetext = tr("From Date - Time");
+    dateLabel = new QLabel(dateTimetext);
+    dateTimeEdit = new QDateTimeEdit;
+    dateTimeEdit->setDateTime(QDateTime::currentDateTime());
+    dateTimeEdit->setCalendarPopup(true);
+
+    QString shoevendortext = tr("Vendor");
+    shoevendorlabel = new QLabel(shoevendortext);
+    shoevendor = new QLineEdit(this);
+    shoevendor->setText("");
+
+    QString shoemodeltext = tr("Model");
+    shoemodellabel = new QLabel(shoemodeltext);
+    shoemodel = new QLineEdit(this);
+    shoemodel->setText("");
+
+    QString shoetypetext = tr("Type of Run");
+    shoetypelabel = new QLabel(shoetypetext);
+    shoetype = new QLineEdit(this);
+    shoetype->setText("");
+    //QLabel *shoetypelabel = new QLabel(tr("Type of Run"));
+    //shoetype = new QComboBox(this);
+    //shoetype->addItem(tr("Mountainshoe"));
+    //shoetype->addItem(tr("Roadshoe"));
+    //shoetype->addItem(tr("Crono/ITT"));
+
+    //QString shoeweightkgtext = context->athlete->measures->getFieldNames(Measures::GearMGT).at(GearMeasure::RunWeightKg);
+    QString shoeweightkgtext = tr("Weight of Run");
+    shoeweightkglabel = new QLabel(shoeweightkgtext);
+    shoeweightkg = new QDoubleSpinBox(this);
+    shoeweightkg->setMaximum(999.9);
+    shoeweightkg->setMinimum(0.0);
+    shoeweightkg->setDecimals(1);
+    shoeweightkg->setValue(0.0);
+    shoeweightkg->setSuffix(runGearUnits);
+
+    QString commenttext = tr("Comment");
+    commentlabel = new QLabel(commenttext);
+    comment = new QLineEdit(this);
+    comment->setText("");
+
+    runGearGrid->addWidget(dateLabel, 1, 0, alignment);
+    runGearGrid->addWidget(dateTimeEdit, 1, 1, alignment);
+
+    runGearGrid->addWidget(shoevendorlabel, 2, 0, alignment);
+    runGearGrid->addWidget(shoevendor, 2, 1, alignment);
+
+    runGearGrid->addWidget(shoemodellabel, 3, 0, alignment);
+    runGearGrid->addWidget(shoemodel, 3, 1, alignment);
+
+    runGearGrid->addWidget(shoetypelabel, 4, 0, alignment);
+    runGearGrid->addWidget(shoetype, 4, 1, alignment);
+
+    runGearGrid->addWidget(shoeweightkglabel, 5, 0, alignment);
+    runGearGrid->addWidget(shoeweightkg, 5, 1, alignment);
+
+    runGearGrid->addWidget(commentlabel, 6, 0, alignment);
+    runGearGrid->addWidget(comment, 6, 1, alignment);
+
+    all->addLayout(runGearGrid);
+
+    // Buttons
+    updateButton = new QPushButton(tr("Update"));
+    updateButton->hide();
+    addButton = new QPushButton(tr("+"));
+    deleteButton = new QPushButton(tr("-"));
+#ifndef Q_OS_MAC
+    addButton->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+    deleteButton->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+#else
+    updateButton->setText(tr("Update"));
+    addButton->setText(tr("Add"));
+    deleteButton->setText(tr("Delete"));
+#endif
+
+    QHBoxLayout *actionButtons = new QHBoxLayout;
+    actionButtons->setSpacing(2 *dpiXFactor);
+    actionButtons->addStretch();
+    actionButtons->addWidget(updateButton);
+    actionButtons->addWidget(addButton);
+    actionButtons->addWidget(deleteButton);
+    all->addLayout(actionButtons);
+
+    // Gear Measures
+    runGearTree = new QTreeWidget;
+    runGearTree->headerItem()->setText(0, dateTimetext);
+    runGearTree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(1, shoevendortext);
+    runGearTree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(2, shoemodeltext);
+    runGearTree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(3, shoetypetext);
+    runGearTree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(4, shoeweightkgtext);
+    runGearTree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(5, commenttext);
+    runGearTree->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(6, tr("source"));
+    runGearTree->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    runGearTree->headerItem()->setText(7, tr("Original source"));
+    runGearTree->setColumnCount(8);
+    runGearTree->setSelectionMode(QAbstractItemView::SingleSelection);
+    runGearTree->setEditTriggers(QAbstractItemView::SelectedClicked); // allow edit
+    runGearTree->setUniformRowHeights(true);
+    runGearTree->setIndentation(0);
+
+    // get gear if the file exists
+    QFile runGearFile(QString("%1/gear_run.json").arg(context->athlete->home->config().canonicalPath()));
+    if (runGearFile.exists()) {
+        RunGearMeasureParser::unserialize(runGearFile, runGearMG);
+    }
+    qSort(runGearMG); // date order
+
+    // setup runGearTree
+    for (int i=0; i<runGearMG.count(); i++) {
+        QTreeWidgetItem *add = new QTreeWidgetItem(runGearTree->invisibleRootItem());
+        add->setFlags(add->flags() & ~Qt::ItemIsEditable);
+        // date & time
+        add->setText(0, runGearMG[i].when.toString(tr("MMM d, yyyy - hh:mm:ss")));
+        // shoe specifications
+        add->setText(1, runGearMG[i].shoevendor);
+        add->setText(2, runGearMG[i].shoemodel);
+        add->setText(3, runGearMG[i].shoetype);
+        add->setText(4, QString("%1").arg(runGearMG[i].shoeweightkg * runGearWeightFactor, 0, 'f', 1));
+        add->setText(5, runGearMG[i].comment);
+        // source
+        add->setText(6, runGearMG[i].getSourceDescription());
+        add->setText(7, runGearMG[i].originalSource);
+    }
+
+    all->addWidget(runGearTree);
+
+    // set default edit values to newest gearmeasurement (if one exists)
+    if (runGearMG.count() > 0) {
+        shoeweightkg->setValue(runGearMG.last().shoeweightkg * runGearWeightFactor);
+    }
+
+    // edit connect
+    connect(dateTimeEdit, SIGNAL(dateTimeChanged(QDateTime)), this, SLOT(rangeEdited()));
+    connect(shoevendor, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(shoemodel, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(shoetype, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+    connect(shoeweightkg, SIGNAL(valueChanged(double)), this, SLOT(rangeEdited()));
+    connect(comment, SIGNAL(textEdited(QString)), this, SLOT(rangeEdited()));
+
+    // button connect
+    connect(updateButton, SIGNAL(clicked()), this, SLOT(addOReditClicked()));
+    connect(addButton, SIGNAL(clicked()), this, SLOT(addOReditClicked()));
+    connect(deleteButton, SIGNAL(clicked()), this, SLOT(deleteClicked()));
+
+    // list selection connect
+    connect(runGearTree, SIGNAL(itemSelectionChanged()), this, SLOT(rangeSelectionChanged()));
+
+    // save initial values for things we care about
+    // defaultvendor as stored (always metric) and GearMG checksum
+    //b4.defaultGear = appsettings->cvalue(context->athlete->cyclist, GC_WEIGHT).toDouble();
+    b4.fingerprint = 0;
+    foreach (RunGearMeasure rgm, runGearMG) {
+        b4.fingerprint += rgm.getFingerprint();
+    }
+}
+
+void
+RunGearPage::unitChanged(int currentIndex)
+{
+    if (currentIndex == 0) {
+        metricUnits = true;
+        shoeweightkg->setValue(shoeweightkg->value() / LB_PER_KG);
+    } else {
+        metricUnits = false;
+        shoeweightkg->setValue(shoeweightkg->value() * LB_PER_KG);
+   }
+
+    QString runGearUnits = (metricUnits ? tr(" kg") : tr(" lb"));
+    shoeweightkg->setSuffix(runGearUnits);
+
+    // update runGearTree
+    const double runGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+    for (int i=0; i<runGearTree->invisibleRootItem()->childCount(); i++) {
+        QTreeWidgetItem *edit = runGearTree->invisibleRootItem()->child(i);
+        // gear weight
+        edit->setText(1, QString("%1").arg(runGearMG[i].shoeweightkg * runGearWeightFactor, 0, 'f', 1));
+    }
+}
+
+qint32
+RunGearPage::saveClicked()
+{
+    //appsettings->setCValue(context->athlete->cyclist, GC_WEIGHT, defaultGear->value() * (metricUnits ? 1.0 : KG_PER_LB));
+
+    qint32 state=0;
+
+    // default defaultvendor changed ?
+    //if (b4.defaultGear != appsettings->cvalue(context->athlete->cyclist, GC_WEIGHT).toDouble()) {
+    //    state += CONFIG_ATHLETE;
+    //}
+
+    // Gear Measures changed ?
+    unsigned long fingerprint = 0;
+    foreach (RunGearMeasure rgm, runGearMG) {
+        fingerprint += rgm.getFingerprint();
+    }
+    if (fingerprint != b4.fingerprint) {
+        // store in athlete
+        RunGearMG* pRunGear = dynamic_cast <RunGearMG*>(context->athlete->measures->getGroup(Measures::RunGearMGT));
+        pRunGear->setRunGearMG(runGearMG);
+        // now save data away if we actually got something !
+        pRunGear->write();
+        state += CONFIG_ATHLETE;
+    }
+
+    //return state;
+}
+
+void
+RunGearPage::addOReditClicked()
+{
+    const double runGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    int index;
+    QTreeWidgetItem *add;
+    RunGearMeasure addRgm;
+    QString dateTimeTxt = dateTimeEdit->dateTime().toString(tr("MMM d, yyyy - hh:mm:ss"));
+
+    // if an entry for this date & time already exists, edit item otherwise add new
+    QList<QTreeWidgetItem*> matches = runGearTree->findItems(dateTimeTxt, Qt::MatchExactly, 0);
+    if (matches.count() > 0) {
+        // edit existing
+        add = matches[0];
+        index = runGearTree->invisibleRootItem()->indexOfChild(matches[0]);
+        runGearMG.removeAt(index);
+    } else {
+        // add new
+        index = runGearMG.count();
+        add = new QTreeWidgetItem;
+        add->setFlags(add->flags() & ~Qt::ItemIsEditable);
+        runGearTree->invisibleRootItem()->insertChild(index, add);
+    }
+
+    addRgm.when = dateTimeEdit->dateTime().toUTC();
+    addRgm.shoevendor = shoevendor->text();
+    addRgm.shoemodel = shoemodel->text();
+    addRgm.shoetype = shoetype->text();
+    addRgm.shoeweightkg = shoeweightkg->value() / runGearWeightFactor;
+    addRgm.comment = comment->text();
+    addRgm.source = RunGearMeasure::Manual;
+    addRgm.originalSource = "";
+    runGearMG.insert(index, addRgm);
+
+    // date and time
+    add->setText(0, dateTimeTxt);
+    // Gear specifications
+    add->setText(1, QString("%1").arg(shoevendor->text()));
+    add->setText(2, QString("%1").arg(shoemodel->text()));
+    add->setText(3, QString("%1").arg(shoetype->text()));
+    add->setText(4, QString("%1").arg(shoeweightkg->value()));
+    add->setText(5, QString("%1").arg(comment->text()));
+    add->setText(6, QString("%1").arg(tr("Manual entry")));
+    add->setText(7, ""); // Original source
+
+    updateButton->hide();
+}
+
+void
+RunGearPage::deleteClicked()
+{
+    if (runGearTree->currentItem()) {
+        int index = runGearTree->invisibleRootItem()->indexOfChild(runGearTree->currentItem());
+        delete runGearTree->invisibleRootItem()->takeChild(index);
+        runGearMG.removeAt(index);
+    }
+}
+
+void
+RunGearPage::rangeEdited()
+{
+    const double runGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    if (runGearTree->currentItem()) {
+        int index = runGearTree->invisibleRootItem()->indexOfChild(runGearTree->currentItem());
+
+        QDateTime dateTime = dateTimeEdit->dateTime();
+        QDateTime odateTime = runGearMG[index].when;
+
+        QString nshoevendor = shoevendor->text();
+        QString oshoevendor = runGearMG[index].shoevendor;
+        QString nshoemodel = shoemodel->text();
+        QString oshoemodel = runGearMG[index].shoemodel;
+        QString nshoetype = shoetype->text();
+        QString oshoetype = runGearMG[index].shoetype;
+
+        double nshoeweightkg = shoeweightkg->value();
+        double oshoeweightkg = runGearMG[index].shoeweightkg * runGearWeightFactor;
+
+        QString ncomment = comment->text();
+        QString ocomment = runGearMG[index].comment;
+
+        if (dateTime == odateTime && (nshoevendor != oshoevendor ||
+                                      nshoemodel != oshoemodel ||
+                                      nshoetype != oshoetype ||
+                                      nshoeweightkg != oshoeweightkg ||
+                                      ncomment != ocomment))
+            updateButton->show();
+        else
+            updateButton->hide();
+    }
+}
+
+void
+RunGearPage::rangeSelectionChanged()
+{
+    const double runGearWeightFactor = (metricUnits ? 1.0 : LB_PER_KG);
+
+    // fill with current details
+    if (runGearTree->currentItem()) {
+
+        int index = runGearTree->invisibleRootItem()->indexOfChild(runGearTree->currentItem());
+        RunGearMeasure current = runGearMG[index];
+
+        dateTimeEdit->setDateTime(current.when);
+        shoevendor->setText(current.shoevendor);
+        shoemodel->setText(current.shoemodel);
+        shoetype->setText(current.shoetype);
+        shoeweightkg->setValue(current.shoeweightkg * runGearWeightFactor);
+        comment->setText(current.comment);
+
+        updateButton->hide();
+    }
+}
