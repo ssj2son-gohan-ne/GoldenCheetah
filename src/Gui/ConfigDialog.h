@@ -78,6 +78,11 @@ class AthleteConfig : public QWidget
         PaceZonePage *paceZonePage;
         AutoImportPage *autoImportPage;
         BackupPage *backupPage;
+        //Gear
+	GearPage *gearPage;
+        SwimGearPage *swimGearPage;
+        BikeGearPage *bikeGearPage;
+        RunGearPage *runGearPage;
 };
 
 // APPEARANCE PAGE
