@@ -18,181 +18,154 @@
 
 
 /*
- * 2020-07-16 Adapted BodyMeasures.h by ssj2son-gohan-ne
+ * 2020-08-20 Adapted Measures.h by ssj2son-gohan-ne
+ *
+ * Measure = SwimGearMeasure
+ * Measures = SwimGearMeasures
+ * measuresource = swimgearmeasuresource
+ * MeasureSource = SwimGearMeasureSource
+ * bodymeasuretype = swimgearmeasuretype
+ * MeasuresGroup = SwimGearMeasuresGroup
+ * measuresgrouptype = swimgearmeasuresgrouptype
+ * MeasuresGroupType = SwimGearMeasuresGroupType
+ * WeightKg = GogglesKg
+ * MAX_MEASURES = MAX_GEARMEASURES
+ * Body = SwimGear
+ * //measure = swimgearmeasure
+ * measures = swimgearmeasures -> does not work for {return measures ; } do it by hand
+ * source = swimgearsource
+ * originalSource = swimgearoriginalSource
 */
 
 #ifndef _Gc_Gears_h
 #define _Gc_Gears_h
 
-#include "Context.h"
-#include "Measures.h"
+#include "GoldenCheetah.h"
+//#include "Context.h"
+//#include "Measures.h"
 
+#include <QDate>
+#include <QDir>
 #include <QString>
 #include <QStringList>
-#include <QDateTime>
+//#include <QDateTime>
+
+#define MAX_MEASURES 16
 
 
 
-// Swim Measures
+// ///////// Swim Gear Measures /////////////
 
-class SwimGearMeasure : public Measure {
+class SwimGearMeasure {
     Q_DECLARE_TR_FUNCTIONS(SwimGearMeasure)
 public:
 
-    enum swimgearmeasuretype { GlassesWeightKg = 0 };
-    typedef enum swimgearmeasuretype SwimGearMeasureType;
+    enum swimgearmeasuresource { Manual, Withings, TodaysPlan, CSV };
+    typedef enum swimgearmeasuresource SwimGearMeasureSource;
 
-    //GearMeasure() : glassesweightkg(0), bikeweightkg(0), shoeweightkg(0) {}
-    SwimGearMeasure() : glassesweightkg(0) {}
+    enum swimgearmeasuretype { GogglesKg = 0 };
 
-    // depending on datasource not all fields may be filled with actual values
+    SwimGearMeasure() : when(QDateTime()), comment(""),
+                swimgearsource(Manual), swimgearoriginalSource("") {
+        for (int i = 0; i<MAX_GEARMEASURES; i++) values[i] = 0.0;
+    }
+    SwimGearMeasure(const SwimGearMeasure &other) {
+        this->when = other.when;
+        this->comment = other.comment;
+        this->swimgearsource = other.swimgearsource;
+        this->swimgearoriginalSource = other.swimgearoriginalSource;
+        for (int i = 0; i<MAX_GEARMEASURES; i++) this->values[i] = other.values[i];
+    }
+    virtual ~SwimGearMeasure() {}
 
-    double glassesweightkg;     // weight in Kilograms
-    // calculate a CRC for the GearMeasure data - used to see if
+    QDateTime when;              // when was this reading taken
+    QString comment;             // user commentary regarding this measurement
+
+    SwimGearMeasureSource swimgearsource;
+    QString swimgearoriginalSource;      // if delivered from the cloud service
+
+    double values[MAX_GEARMEASURES]; // field values for standard swimgearmeasures
+
+    // used by qSort()
+    bool operator< (SwimGearMeasure right) const {
+        return (when < right.when);
+    }
+    // calculate a CRC for the SwimGearMeasure data - used to see if
     // data is changed in Configuration pages
-    quint16 getFingerprint() const;
+    virtual quint16 getFingerprint() const;
+
+    // getdescription text for swimgearsource
+    virtual QString getSourceDescription() const;
 };
 
-class SwimGearMeasureParser {
+class SwimGearMeasuresGroup {
 
-public:
-    static bool serialize(QString, QList<SwimGearMeasure> &);
-    static bool unserialize(QFile &, QList<SwimGearMeasure> &);
-};
-
-
-class SwimGearMG : public MeasuresGroup {
-    Q_DECLARE_TR_FUNCTIONS(SwimGearMG)
 public:
     // Default constructor intended to access metadata,
     // directory and withData must be provided to access data.
-    SwimGearMG(QDir dir=QDir(), bool withData=false);
-    ~SwimGearMG() {}
-    void write();
-    QList<SwimGearMeasure>& swimGearMG() { return swimGearMG_; }
-    void setSwimGearMG(QList<SwimGearMeasure>&x);
-    void getSwimGearMeasure(QDate date, SwimGearMeasure&) const;
+    SwimGearMeasuresGroup(QString symbol, QString name, QStringList symbols, QStringList names, QStringList metricUnits, QStringList imperialUnits, QList<double> unitsFactors, QList<QStringList> headers,  QDir dir=QDir(), bool withData=false);
+    SwimGearMeasuresGroup(QDir dir=QDir(), bool withData=false) : dir(dir), withData(withData) {}
+    virtual ~SwimGearMeasuresGroup() {}
+    virtual void write();
+    virtual QList<SwimGearMeasure>& swimgearmeasures() { return swimgearmeasures_; }
+    virtual void setMeasures(QList<SwimGearMeasure>&x);
+    virtual void getMeasure(QDate date, SwimGearMeasure&) const;
 
-    QString getSymbol() const { return "SwimGearMGT"; }
-    QString getName() const { return tr("SwimGearMGT"); }
-    QStringList getFieldSymbols() const ;
-    QStringList getFieldNames() const;
-    QDate getStartDate() const;
-    QDate getEndDate() const;
-    QString getFieldUnits(int field, bool useMetricUnits=true) const;
-    double getFieldValue(QDate date, int field=SwimGearMeasure::GlassesWeightKg, bool useMetricUnits=true) const;
+    // Common access to SwimGearMeasures
+    virtual QString getSymbol() const { return symbol; }
+    virtual QString getName() const { return name; }
+    virtual QStringList getFieldSymbols() const { return symbols; }
+    virtual QStringList getFieldNames() const { return names; }
+    virtual QStringList getFieldHeaders(int field) const { return headers.value(field); }
+    virtual QString getFieldUnits(int field, bool useMetricUnits=true) const { return useMetricUnits ? metricUnits.value(field) : imperialUnits.value(field); }
+    virtual QList<double> getFieldUnitsFactors() const { return unitsFactors; }
+    virtual double getFieldValue(QDate date, int field=0, bool useMetricUnits=true) const;
+    virtual QDate getStartDate() const;
+    virtual QDate getEndDate() const;
+
+protected:
+    const QDir dir;
+    const bool withData;
+
+private:
+    const QString symbol, name;
+    const QStringList symbols, names, metricUnits, imperialUnits;
+    const QList<double> unitsFactors;
+    const QList<QStringList> headers;
+    QList<SwimGearMeasure> swimgearmeasures_;
+
+    bool serialize(QString, QList<SwimGearMeasure> &);
+    bool unserialize(QFile &, QList<SwimGearMeasure> &);
+};
+
+class SwimGearMeasures {
+    Q_DECLARE_TR_FUNCTIONS(SwimGearMeasures)
+public:
+    // Default constructor intended to access metadata,
+    // directory and withData must be provided to access data.
+    SwimGearMeasures(QDir dir=QDir(), bool withData=false);
+    ~SwimGearMeasures();
+
+    QStringList getGroupSymbols() const;
+    QStringList getGroupNames() const;
+    SwimGearMeasuresGroup* getGroup(int group);
+
+    enum swimgearmeasuresgrouptype { SwimGear = 0 };
+    typedef enum swimgearmeasuresgrouptype SwimGearMeasuresGroupType;
+
+    // Convenience methods to simplify client code
+    QStringList getFieldSymbols(int group) const;
+    QStringList getFieldNames(int group) const;
+    QDate getStartDate(int group) const;
+    QDate getEndDate(int group) const;
+    QString getFieldUnits(int group, int field, bool useMetricUnits=true) const;
+    double getFieldValue(int group, QDate date, int field, bool useMetricUnits=true) const;
 
 private:
     QDir dir;
     bool withData;
-    QList<SwimGearMeasure> swimGearMG_;
-};
-
-// Bike Measures
-
-class BikeGearMeasure : public Measure {
-    Q_DECLARE_TR_FUNCTIONS(BikeGearMeasure)
-public:
-
-    enum gearmeasuretype { BikeWeightKg = 0 };
-    typedef enum gearmeasuretype GearMeasureType;
-
-    BikeGearMeasure() : bikeweightkg(0) {}
-
-    // depending on datasource not all fields may be filled with actual values
-
-    double bikeweightkg;     // weight in Kilograms
-    // calculate a CRC for the GearMeasure data - used to see if
-    // data is changed in Configuration pages
-    quint16 getFingerprint() const;
-};
-
-class BikeGearMeasureParser {
-
-public:
-    static bool serialize(QString, QList<BikeGearMeasure> &);
-    static bool unserialize(QFile &, QList<BikeGearMeasure> &);
-};
-
-class BikeGearMG : public MeasuresGroup {
-    Q_DECLARE_TR_FUNCTIONS(BikeGearMG)
-public:
-    // Default constructor intended to access metadata,
-    // directory and withData must be provided to access data.
-    BikeGearMG(QDir dir=QDir(), bool withData=false);
-    ~BikeGearMG() {}
-    void write();
-    QList<BikeGearMeasure>& bikeGearMG() { return bikeGearMG_; }
-    void setBikeGearMG(QList<BikeGearMeasure>&x);
-    void getBikeGearMeasure(QDate date, BikeGearMeasure&) const;
-
-    QString getSymbol() const { return "BikeGearMGT"; }
-    QString getName() const { return tr("BikeGearMGT"); }
-    QStringList getFieldSymbols() const ;
-    QStringList getFieldNames() const;
-    QDate getStartDate() const;
-    QDate getEndDate() const;
-    QString getFieldUnits(int field, bool useMetricUnits=true) const;
-    double getFieldValue(QDate date, int field=BikeGearMeasure::BikeWeightKg, bool useMetricUnits=true) const;
-
-private:
-    QDir dir;
-    bool withData;
-    QList<BikeGearMeasure> bikeGearMG_;
-};
-
-// Run Measures
-
-class RunGearMeasure : public Measure {
-    Q_DECLARE_TR_FUNCTIONS(RunGearMeasure)
-public:
-
-    enum gearmeasuretype { ShoeWeightKg = 0 };
-    typedef enum gearmeasuretype GearMeasureType;
-
-    RunGearMeasure() : shoeweightkg(0) {}
-
-    // depending on datasource not all fields may be filled with actual values
-
-    double shoeweightkg;     // weight in Kilograms
-    // calculate a CRC for the GearMeasure data - used to see if
-    // data is changed in Configuration pages
-    quint16 getFingerprint() const;
-};
-
-class RunGearMeasureParser {
-
-public:
-    static bool serialize(QString, QList<RunGearMeasure> &);
-    static bool unserialize(QFile &, QList<RunGearMeasure> &);
-};
-
-
-class RunGearMG : public MeasuresGroup {
-    Q_DECLARE_TR_FUNCTIONS(RunGearMG)
-public:
-    // Default constructor intended to access metadata,
-    // directory and withData must be provided to access data.
-    RunGearMG(QDir dir=QDir(), bool withData=false);
-    ~RunGearMG() {}
-    void write();
-    QList<RunGearMeasure>& runGearMG() { return runGearMG_; }
-    void setRunGearMG(QList<RunGearMeasure>&x);
-    void getRunGearMeasure(QDate date, RunGearMeasure&) const;
-
-    QString getSymbol() const { return "RunGearMGT"; }
-    QString getName() const { return tr("RunGearMGT"); }
-    QStringList getFieldSymbols() const ;
-    QStringList getFieldNames() const;
-    QDate getStartDate() const;
-    QDate getEndDate() const;
-    QString getFieldUnits(int field, bool useMetricUnits=true) const;
-    double getFieldValue(QDate date, int field=RunGearMeasure::ShoeWeightKg, bool useMetricUnits=true) const;
-
-private:
-    QDir dir;
-    bool withData;
-    QList<RunGearMeasure> runGearMG_;
+    QList<SwimGearMeasuresGroup*> groups;
 };
 
 #endif
+
