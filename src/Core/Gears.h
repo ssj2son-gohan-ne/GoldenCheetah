@@ -107,7 +107,7 @@ public:
     SwimGearMeasuresGroup(QDir dir=QDir(), bool withData=false) : dir(dir), withData(withData) {}
     virtual ~SwimGearMeasuresGroup() {}
     virtual void write();
-    virtual QList<SwimGearMeasure>& swimgearmeasures() { return swimgearmeasures_; }
+    virtual QList<SwimGearMeasure>& swimgearmeasures() { return swimgearmeasures; }
     virtual void setMeasures(QList<SwimGearMeasure>&x);
     virtual void getMeasure(QDate date, SwimGearMeasure&) const;
 
@@ -132,7 +132,7 @@ private:
     const QStringList symbols, names, metricUnits, imperialUnits;
     const QList<double> unitsFactors;
     const QList<QStringList> headers;
-    QList<SwimGearMeasure> swimgearmeasures_;
+    QList<SwimGearMeasure> swimgearmeasures;
 
     bool serialize(QString, QList<SwimGearMeasure> &);
     bool unserialize(QFile &, QList<SwimGearMeasure> &);
