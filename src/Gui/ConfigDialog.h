@@ -64,10 +64,12 @@ class AthleteConfig : public QWidget
         AboutModelPage *modelPage;
         CredentialsPage *credentialsPage;
         QVector<MeasuresPage*> measuresPages;
+//Gear
+        QVector<SwimGearMeasuresPage*> swimgearmeasuresPages;
 
     public slots:
         qint32 saveClicked();
-    
+
     private:
         QDir home;
         Context *context;
@@ -78,11 +80,6 @@ class AthleteConfig : public QWidget
         PaceZonePage *paceZonePage;
         AutoImportPage *autoImportPage;
         BackupPage *backupPage;
-        //Gear
-	GearPage *gearPage;
-        SwimGearPage *swimGearPage;
-        BikeGearPage *bikeGearPage;
-        RunGearPage *runGearPage;
 };
 
 // APPEARANCE PAGE
@@ -95,7 +92,7 @@ class AppearanceConfig : public QWidget
 
     public slots:
         qint32 saveClicked();
-    
+
     private:
         QDir home;
         Context *context;
@@ -113,7 +110,7 @@ class DataConfig : public QWidget
 
     public slots:
         qint32 saveClicked();
-    
+
     private:
         QDir home;
         Context *context;
@@ -131,7 +128,7 @@ class MetricConfig : public QWidget
 
     public slots:
         qint32 saveClicked();
-    
+
     private:
         QDir home;
         Context *context;
@@ -152,7 +149,7 @@ class TrainConfig : public QWidget
 
     public slots:
         qint32 saveClicked();
-    
+
     private:
         QDir home;
         Context *context;
@@ -173,7 +170,7 @@ class IntervalConfig : public QWidget
 
     public slots:
         qint32 saveClicked();
-    
+
     private:
         QDir home;
         Context *context;

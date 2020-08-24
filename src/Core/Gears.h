@@ -35,14 +35,13 @@
  * measures = swimgearmeasures -> does not work for {return measures ; } do it by hand
  * source = swimgearsource
  * originalSource = swimgearoriginalSource
+ * x = xswim
 */
 
 #ifndef _Gc_Gears_h
 #define _Gc_Gears_h
 
 #include "GoldenCheetah.h"
-//#include "Context.h"
-//#include "Measures.h"
 
 #include <QDate>
 #include <QDir>
@@ -50,12 +49,9 @@
 #include <QStringList>
 //#include <QDateTime>
 
-#define MAX_MEASURES 16
+#define MAX_GEARMEASURES 16
 
-
-
-// ///////// Swim Gear Measures /////////////
-
+// ///////// Swim Gear Measure /////////////
 class SwimGearMeasure {
     Q_DECLARE_TR_FUNCTIONS(SwimGearMeasure)
 public:
@@ -107,8 +103,8 @@ public:
     SwimGearMeasuresGroup(QDir dir=QDir(), bool withData=false) : dir(dir), withData(withData) {}
     virtual ~SwimGearMeasuresGroup() {}
     virtual void write();
-    virtual QList<SwimGearMeasure>& swimgearmeasures() { return swimgearmeasures; }
-    virtual void setMeasures(QList<SwimGearMeasure>&x);
+    virtual QList<SwimGearMeasure>& swimgearmeasures() { return swimgearmeasures_; }
+    virtual void setMeasures(QList<SwimGearMeasure>&xswim);
     virtual void getMeasure(QDate date, SwimGearMeasure&) const;
 
     // Common access to SwimGearMeasures
@@ -132,7 +128,7 @@ private:
     const QStringList symbols, names, metricUnits, imperialUnits;
     const QList<double> unitsFactors;
     const QList<QStringList> headers;
-    QList<SwimGearMeasure> swimgearmeasures;
+    QList<SwimGearMeasure> swimgearmeasures_;
 
     bool serialize(QString, QList<SwimGearMeasure> &);
     bool unserialize(QFile &, QList<SwimGearMeasure> &);

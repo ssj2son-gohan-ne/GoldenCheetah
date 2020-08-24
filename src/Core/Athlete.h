@@ -20,6 +20,7 @@
 #define _GC_Athlete_h 1
 
 #include "Measures.h"
+#include "Gears.h"
 
 #include <QDir>
 #include <QSqlDatabase>
@@ -99,6 +100,8 @@ class Athlete : public QObject
         QList<RideFileCache*> cpxCache;
         RideCache *rideCache;
         Measures *measures;
+// Gear
+        SwimGearMeasures *swimgearmeasures;
 
         // cloud download
         CloudServiceAutoDownload *cloudAutoDownload;

@@ -158,6 +158,8 @@ Q_OBJECT
                  Preferences_Athlete_TrainingZones_Pace,
                  Preferences_Athlete_Autoimport,
                  Preferences_Athlete_Backup,
+//Gear
+                 Preferences_Athlete_SwimGearMeasures,
                  Preferences_Passwords,
                  Preferences_Appearance,
                  Preferences_Intervals,

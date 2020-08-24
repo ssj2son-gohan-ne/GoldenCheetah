@@ -73,7 +73,7 @@ class SeasonsPage;
 class DevicePage;
 class RemotePage;
 class SimBicyclePage;
-class GearPage;
+//class GearMeasurePage;
 
 class GeneralPage : public QWidget
 {
@@ -1051,7 +1051,7 @@ class HrZonePage : public QWidget
         LTPage *ltPage[nSports];
 
     private slots:
-        
+
         void changeSport(int i);
 
 };
@@ -1263,15 +1263,25 @@ class IntervalsPage : public QWidget
 
 // Gear
 
-// Swim Gear Page
-class SwimGearPage : public QWidget
+
+// MeasuresPage = GearMeasuresPage
+// MeasuresGroup = GearMeasuresGroup
+// measuresGroup = gearmeasuresGroup
+// Measure = GearMeasure
+// measures = gearmeasures
+// measuresTree = gearmeasuresTree
+
+// Gear... = SwimGear...
+// gear... = swimgear...
+
+class SwimGearMeasuresPage : public QWidget
 {
     Q_OBJECT
     G_OBJECT
 
 
     public:
-        SwimGearPage(Context *context);
+        SwimGearMeasuresPage(QWidget *parent, Context *context, SwimGearMeasuresGroup *swimgearmeasuresGroup);
         qint32 saveClicked();
 
     public slots:
@@ -1282,190 +1292,27 @@ class SwimGearPage : public QWidget
         void rangeSelectionChanged();
 
     private:
-        bool active;
+        Context *context;
+        SwimGearMeasuresGroup *swimgearmeasuresGroup;
         bool metricUnits;
-        QList<SwimGearMeasure> swimGearMG;
+        QList<SwimGearMeasure> swimgearmeasures;
 
         QLabel *dateLabel;
         QDateTimeEdit *dateTimeEdit;
-        QLabel *glassesvendorlabel;
-        QLineEdit *glassesvendor;
-        QLabel *glassesmodellabel;
-        QLineEdit *glassesmodel;
 
-        QLabel *glassestypelabel;
-        QLineEdit *glassestype;
-        //QComboBox *biketype;
+        QVector<QLabel*> valuesLabel;
+        QVector<QDoubleSpinBox*> valuesEdit;
 
-        QLabel *glassesweightkglabel;
-        QDoubleSpinBox *glassesweightkg;
         QLabel *commentlabel;
         QLineEdit *comment;
 
-        Context *context;
-
-        QTreeWidget *swimGearTree;
+        QTreeWidget *swimgearmeasuresTree;
         QPushButton *addButton, *updateButton, *deleteButton;
 
     struct {
-        //double glassesweightkg;
         unsigned long fingerprint;
     } b4;
 
     private slots:
 };
 
-// Bike Gear Page
-class BikeGearPage : public QWidget
-{
-    Q_OBJECT
-    G_OBJECT
-
-
-    public:
-        BikeGearPage(Context *context);
-        qint32 saveClicked();
-
-    public slots:
-        void unitChanged(int currentIndex);
-        void addOReditClicked();
-        void deleteClicked();
-        void rangeEdited();
-        void rangeSelectionChanged();
-
-    private:
-        bool active;
-        bool metricUnits;
-        QList<BikeGearMeasure> bikeGearMG;
-
-        QLabel *dateLabel;
-        QDateTimeEdit *dateTimeEdit;
-        QLabel *bikevendorlabel;
-        QLineEdit *bikevendor;
-        QLabel *bikemodellabel;
-        QLineEdit *bikemodel;
-
-        QLabel *biketypelabel;
-        QLineEdit *biketype;
-        //QComboBox *biketype;
-
-        QLabel *bikeweightkglabel;
-        QDoubleSpinBox *bikeweightkg;
-        QLabel *commentlabel;
-        QLineEdit *comment;
-
-        Context *context;
-
-        QTreeWidget *bikeGearTree;
-        QPushButton *addButton, *updateButton, *deleteButton;
-
-    struct {
-        //double bikeweightkg;
-        unsigned long fingerprint;
-    } b4;
-
-    private slots:
-};
-
-// Run Gear Page
-class RunGearPage : public QWidget
-{
-    Q_OBJECT
-    G_OBJECT
-
-
-    public:
-        RunGearPage(Context *context);
-        qint32 saveClicked();
-
-    public slots:
-        void unitChanged(int currentIndex);
-        void addOReditClicked();
-        void deleteClicked();
-        void rangeEdited();
-        void rangeSelectionChanged();
-
-    private:
-        bool active;
-        bool metricUnits;
-        QList<RunGearMeasure> runGearMG;
-
-        QLabel *dateLabel;
-        QDateTimeEdit *dateTimeEdit;
-        QLabel *shoevendorlabel;
-        QLineEdit *shoevendor;
-        QLabel *shoemodellabel;
-        QLineEdit *shoemodel;
-
-        QLabel *shoetypelabel;
-        QLineEdit *shoetype;
-        //QComboBox *shoetype;
-
-        QLabel *shoeweightkglabel;
-        QDoubleSpinBox *shoeweightkg;
-        QLabel *commentlabel;
-        QLineEdit *comment;
-
-        Context *context;
-
-        QTreeWidget *runGearTree;
-        QPushButton *addButton, *updateButton, *deleteButton;
-
-    struct {
-        //double shoeweightkg;
-        unsigned long fingerprint;
-    } b4;
-
-    private slots:
-};
-
-/*
-* Gear Page
-*/
-
-class GearPage : public QWidget
-{
-    Q_OBJECT
-    G_OBJECT
-
-
-    public:
-        //GearPage(QWidget *parent, Context *context);
-        GearPage(Context *);
-        //GearPage();
-        //qint32 saveClicked();
-
-    public slots:
-        //void unitChanged(int currentIndex);
-        //void addOReditClicked();
-        //void deleteClicked();
-        //void rangeEdited();
-        //void rangeSelectionChanged();
-
-    protected:
-
-        Context *context;
-
-        QTabWidget *geartabs;
-
-    private:
-
-        QLabel *defaultGearLabel;
-        QLabel *defaultswimgearlabel;
-        QComboBox *defaultswimgear;
-        QLabel *defaultridegearlabel;
-        QComboBox *defaultridegear;
-        QLabel *defaultrungearlabel;
-        QComboBox *defaultrungear;
-
-        SwimGearPage *swimGearPage;
-        BikeGearPage *bikeGearPage;
-        RunGearPage *runGearPage;
-
-
-    struct {
-        unsigned long fingerprint;
-    } b4;
-
-    private slots:
-};

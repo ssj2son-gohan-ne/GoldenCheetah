@@ -25,11 +25,11 @@
  * m. = mswim.
  * k = kswim
  *
- * measuresFile = swimgearmeasuresFile
+ * swimgearmeasuresFile = swimgearmeasuresFile
  * // setMeasures = setSwimGearMeasures
  * measure = swimgearmeasure
  * originalsource = swimgearoriginalsource
- *
+ * swimgearmeasures = swimgearmeasures
  * WEIGHTKG = GOGGLESKG
  * weightkg = goggleskg
  *
@@ -74,7 +74,7 @@ QString
 SwimGearMeasure::getSourceDescription() const
 {
 
-    switch(source) {
+    switch(swimgearsource) {
     case SwimGearMeasure::Manual:
         return tr("Manual entry");
     case SwimGearMeasure::Withings:
@@ -96,10 +96,10 @@ SwimGearMeasuresGroup::SwimGearMeasuresGroup(QString symbol, QString name, QStri
     if (!withData) return;
 
     // get measurements if the file exists
-    QFile measuresFile(QString("%1/%2measures.json").arg(dir.canonicalPath()).arg(symbol.toLower()));
-    if (measuresFile.exists()) {
+    QFile swimgearmeasuresFile(QString("%1/%2swimgearmeasures.json").arg(dir.canonicalPath()).arg(symbol.toLower()));
+    if (swimgearmeasuresFile.exists()) {
         QList<SwimGearMeasure> swimgearmeasures;
-        if (unserialize(measuresFile, swimgearmeasures)){
+        if (unserialize(swimgearmeasuresFile, swimgearmeasures)){
             setMeasures(swimgearmeasures);
         }
     }
@@ -112,21 +112,21 @@ SwimGearMeasuresGroup::write()
     if (!withData) return;
 
     // now save data away
-    serialize(QString("%1/%2measures.json").arg(dir.canonicalPath()).arg(symbol.toLower()), swimgearmeasures_);
+    serialize(QString("%1/%2swimgearmeasures.json").arg(dir.canonicalPath()).arg(symbol.toLower()), swimgearmeasures_);
 }
 
 void
 SwimGearMeasuresGroup::setMeasures(QList<SwimGearMeasure>&xswim)
 {
-    measures_ = xswim;
-    qSort(measures_); // date order
+    swimgearmeasures_ = xswim;
+    qSort(swimgearmeasures_); // date order
 }
 
 QDate
 SwimGearMeasuresGroup::getStartDate() const
 {
-    if (!measures_.isEmpty())
-        return measures_.first().when.date();
+    if (!swimgearmeasures_.isEmpty())
+        return swimgearmeasures_.first().when.date();
     else
         return QDate();
 }
@@ -134,8 +134,8 @@ SwimGearMeasuresGroup::getStartDate() const
 QDate
 SwimGearMeasuresGroup::getEndDate() const
 {
-    if (!measures_.isEmpty())
-        return measures_.last().when.date();
+    if (!swimgearmeasures_.isEmpty())
+        return swimgearmeasures_.last().when.date();
     else
         return QDate();
 }
@@ -147,7 +147,7 @@ SwimGearMeasuresGroup::getMeasure(QDate date, SwimGearMeasure &here) const
     here = SwimGearMeasure();
 
     // loop
-    foreach(SwimGearMeasure xswim, measures_) {
+    foreach(SwimGearMeasure xswim, swimgearmeasures_) {
 
         if (symbol == "SwimGear" && xswim.when.date() < date) here = xswim;//TODO generalize
         if (xswim.when.date() == date) here = xswim;
@@ -284,18 +284,13 @@ SwimGearMeasures::SwimGearMeasures(QDir dir, bool withData) : dir(dir), withData
         // By default pre-load mandatory swimgearmeasures in SwimGearMeasuresGroupType order
 
         groups.append(new SwimGearMeasuresGroup("SwimGear", tr("SwimGear"),
-            QStringList()<<"WEIGHTKG"<<"FATKG"<<"MUSCLEKG"<<"BONESKG"<<"LEANKG"<<"FATPERCENT",
-            QStringList()<<tr("Weight")<<tr("Fat Mass")<<tr("Muscle Mass")<<tr("Bone Mass")<<tr("Lean Mass")<<tr("Fat Percent"),
-            QStringList()<<tr("kg")<<tr("kg")<<tr("kg")<<tr("kg")<<tr("kg")<<tr("%"),
-            QStringList()<<tr("lbs")<<tr("lbs")<<tr("lbs")<<tr("lbs")<<tr("lbs")<<tr("%"),
-            QList<double>()<<LB_PER_KG<<LB_PER_KG<<LB_PER_KG<<LB_PER_KG<<LB_PER_KG<<1.0,
+            QStringList()<<"GOGGLESKG",
+            QStringList()<<tr("GogglesWeight"),
+            QStringList()<<tr("kg"),
+            QStringList()<<tr("lbs"),
+            QList<double>()<<LB_PER_KG<<1.0,
             QList<QStringList>()<<
-                (QStringList()<<"goggleskg")<<
-                (QStringList()<<"fatkg")<<
-                (QStringList()<<"boneskg")<<
-                (QStringList()<<"musclekg")<<
-                (QStringList()<<"leankg")<<
-                (QStringList()<<"fatpercent"),
+                (QStringList()<<"goggleskg"),
             dir, withData));
 
         // other standard swimgearmeasures can be loaded from resources
@@ -346,16 +341,16 @@ SwimGearMeasures::SwimGearMeasures(QDir dir, bool withData) : dir(dir), withData
 
 SwimGearMeasures::~SwimGearMeasures()
 {
-    foreach (SwimGearMeasuresGroup* measuresGroup, groups)
-        delete measuresGroup;
+    foreach (SwimGearMeasuresGroup* swimgearmeasuresGroup, groups)
+        delete swimgearmeasuresGroup;
 }
 
 QStringList
 SwimGearMeasures::getGroupSymbols() const
 {
     QStringList symbols;
-    foreach (SwimGearMeasuresGroup* measuresGroup, groups)
-        symbols.append(measuresGroup->getSymbol());
+    foreach (SwimGearMeasuresGroup* swimgearmeasuresGroup, groups)
+        symbols.append(swimgearmeasuresGroup->getSymbol());
     return symbols;
 }
 
@@ -363,8 +358,8 @@ QStringList
 SwimGearMeasures::getGroupNames() const
 {
     QStringList names;
-    foreach (SwimGearMeasuresGroup* measuresGroup, groups)
-        names.append(measuresGroup->getName());
+    foreach (SwimGearMeasuresGroup* swimgearmeasuresGroup, groups)
+        names.append(swimgearmeasuresGroup->getName());
     return names;
 }
 

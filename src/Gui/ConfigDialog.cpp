@@ -211,7 +211,7 @@ void ConfigDialog::closeClicked()
 //   ! new mode: change the CP associated with the present mode
 void ConfigDialog::saveClicked()
 {
-    // if a refresh is happenning stop it, whilst we 
+    // if a refresh is happenning stop it, whilst we
     // update all the configuration settings!
     context->athlete->rideCache->cancel();
 
@@ -261,7 +261,7 @@ void ConfigDialog::saveClicked()
             //       has been zapped along with the windows we need to get out
             //       as quickly as possible.
             close();
-            return; 
+            return;
 
         } else {
 
@@ -269,7 +269,7 @@ void ConfigDialog::saveClicked()
             appsettings->setValue(GC_HOMEDIR, QFileInfo(home.absolutePath()).absolutePath());
         }
 
-    } 
+    }
 
     // we're done.
     context->notifyConfigChanged(changed);
@@ -341,22 +341,13 @@ AthleteConfig::AthleteConfig(QDir home, Context *context) :
     autoImportPage->setWhatsThis(backupPageHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_Backup));
 
 // Gear
-    //gearPage = new GearPage(this, context);
-    gearPage = new GearPage(context);
-    HelpWhatsThis *gearHelp = new HelpWhatsThis(gearPage);
-    gearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
-
-    //swimGearPage = new SwimGearPage(this, context);
-    //HelpWhatsThis *swimGearPageHelp = new HelpWhatsThis(swimGearPage);
-    //swimGearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
-
-    //bikeGearPage = new BikeGearPage(this, context);
-    //HelpWhatsThis *bikeGearPageHelp = new HelpWhatsThis(bikeGearPage);
-    //bikeGearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
-
-    //runGearPage = new RunGearPage(this, context);
-    //HelpWhatsThis *runGearPageHelp = new HelpWhatsThis(runGearPage);
-    //runGearPage->setWhatsThis(athletePhysHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_About));
+    // one for each Swim Gear Measures Group
+    swimgearmeasuresPages = QVector<SwimGearMeasuresPage*>(context->athlete->swimgearmeasures->getGroupNames().count());
+    for (int i = 0; i < swimgearmeasuresPages.count(); i++) {
+        swimgearmeasuresPages[i] = new SwimGearMeasuresPage(this, context, context->athlete->swimgearmeasures->getGroup(i));
+        HelpWhatsThis *swimgearmeasuresHelp = new HelpWhatsThis(swimgearmeasuresPages[i]);
+        swimgearmeasuresPages[i]->setWhatsThis(swimgearmeasuresHelp->getWhatsThisText(HelpWhatsThis::Preferences_Athlete_SwimGearMeasures));
+    }
 // Gear
 
     setContentsMargins(0,0,0,0);
@@ -367,6 +358,11 @@ AthleteConfig::AthleteConfig(QDir home, Context *context) :
     QTabWidget *measuresTab = new QTabWidget(this);
     for (int i=0; i<context->athlete->measures->getGroupNames().count(); i++)
         measuresTab->addTab(measuresPages[i], context->athlete->measures->getGroupNames()[i]);
+
+// Gear
+    QTabWidget *swimgearmeasuresTab = new QTabWidget(this);
+    for (int i=0; i<context->athlete->swimgearmeasures->getGroupNames().count(); i++)
+        swimgearmeasuresTab->addTab(swimgearmeasuresPages[i], context->athlete->swimgearmeasures->getGroupNames()[i]);
 
     QTabWidget *zonesTab = new QTabWidget(this);
     zonesTab->addTab(zonePage, tr("Power Zones"));
@@ -381,14 +377,9 @@ AthleteConfig::AthleteConfig(QDir home, Context *context) :
     tabs->addTab(credentialsPage, tr("Accounts"));
     tabs->addTab(autoImportPage, tr("Auto Import"));
     tabs->addTab(backupPage, tr("Backup"));
-
 // Gear
-    //QTabWidget *gearTab = new QTabWidget(this);
-    //gearTab->addTab(swimGearPage, tr("Swimming Gear"));
-    //gearTab->addTab(rideGearPage, tr("Cycling Gear"));
-    //gearTab->addTab(runGearPage, tr("Running Gear"));
-    tabs->addTab(gearPage, tr("Gear"));
-    //tabs->addTab(gearTab, tr("GearTab"));
+    tabs->addTab(swimgearmeasuresTab, tr("Swim Gear Measures"));
+// Gear
 
     mainLayout->addWidget(tabs);
 }
@@ -407,12 +398,9 @@ qint32 AthleteConfig::saveClicked()
     state |= credentialsPage->saveClicked();
     state |= autoImportPage->saveClicked();
     state |= backupPage->saveClicked();
-
 // Gear
-    //state |= gearPage->saveClicked();
-    state |= swimGearPage->saveClicked();
-    state |= bikeGearPage->saveClicked();
-    state |= runGearPage->saveClicked();
+    foreach (SwimGearMeasuresPage *swimgearmeasuresPage, swimgearmeasuresPages)
+        state |= swimgearmeasuresPage->saveClicked();
 // Gear
 
     return state;

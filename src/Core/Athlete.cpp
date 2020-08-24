@@ -172,6 +172,8 @@ Athlete::Athlete(Context *context, const QDir &homeDir)
 
     // Daily Measures
     measures = new Measures(home->config(), true);
+// Gear
+    swimgearmeasures = new SwimGearMeasures(home->config(), true);
 
     // auto downloader
     cloudAutoDownload = new CloudServiceAutoDownload(context);
@@ -261,6 +263,7 @@ Athlete::~Athlete()
     delete routes;
     delete seasons;
     delete measures;
+    delete swimgearmeasures;
 
     delete rideMetadata_;
     delete colorEngine;
@@ -281,7 +284,7 @@ void Athlete::selectRideFile(QString fileName)
     foreach (RideItem *rideItem, rideCache->rides()) {
 
         context->ride = (RideItem*) rideItem;
-        if (context->ride->fileName == fileName) 
+        if (context->ride->fileName == fileName)
             break;
     }
     context->notifyRideSelected(context->ride);
