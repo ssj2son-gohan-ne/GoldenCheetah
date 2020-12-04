@@ -240,6 +240,7 @@ void VideoWindow::showMeters()
         p_meterWidget->update();
         p_meterWidget->raise();
         p_meterWidget->show();
+        p_meterWidget->startPlayback(context);
     }
     prevPosition = mapToGlobal(pos());
 }
@@ -295,8 +296,10 @@ void VideoWindow::stopPlayback()
 #ifdef GC_VIDEO_QT5
     mp->stop();
 #endif
-    foreach(MeterWidget* p_meterWidget , m_metersWidget)
+    foreach(MeterWidget * p_meterWidget, m_metersWidget) {
+        p_meterWidget->stopPlayback();
         p_meterWidget->hide();
+    }
 }
 
 void VideoWindow::pausePlayback()
@@ -376,9 +379,10 @@ void VideoWindow::telemetryUpdate(RealtimeData rtd)
                 double dLon = rtd.getLongitude();
                 double dAlt = rtd.getAltitude();
 
-                // show/plot or hide depending on existance of valid location data
+                // show/plot or hide depending on existance of valid location
+                // data, only when there is a video to play
                 geolocation geo(dLat, dLon, dAlt);
-                if (geo.IsReasonableGeoLocation()) 
+                if (m && geo.IsReasonableGeoLocation())
                 {
                     liveMapWidget->plotNewLatLng(dLat, dLon);
                     liveMapWidget->show();
