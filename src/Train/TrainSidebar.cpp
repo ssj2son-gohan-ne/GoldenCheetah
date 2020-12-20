@@ -695,6 +695,9 @@ TrainSidebar::configChanged(qint32)
         FTP = context->athlete->zones(false)->getCP(range);
         WPRIME = context->athlete->zones(false)->getWprime(range);
     }
+
+    // Reinit Bicycle
+    bicycle.Reset(context);
 }
 
 /*----------------------------------------------------------------------
@@ -1115,7 +1118,7 @@ void TrainSidebar::Start()       // when start button is pressed
         clearStatusFlags(RT_PAUSED);
 
         // Reset speed simulation timer.
-        bicycle.reset();
+        bicycle.resettimer();
 
         maintainLapDistanceState();
 
@@ -1704,8 +1707,10 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                 }
             }
 
-            // Compute speed from watts if in slope mode and simulation enabled
-            if (useSimulatedSpeed && status&RT_MODE_SLOPE) {
+            // If simulated speed is *not* checked then you get speed reported by
+            // trainer which in ergo mode will be dictated by your gear and cadence,
+            // and in slope mode is whatever the trainer happens to implement.
+            if (useSimulatedSpeed) {
                 BicycleSimState newState(rtData);
                 SpeedDistance ret = bicycle.SampleSpeed(newState);
 

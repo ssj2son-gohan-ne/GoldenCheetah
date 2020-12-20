@@ -735,8 +735,17 @@ bool deviceModel::setData(const QModelIndex &index, const QVariant &value, int r
 //
 TrainOptionsPage::TrainOptionsPage(QWidget *parent, Context *context) : QWidget(parent), context(context)
 {
-    useSimulatedSpeed = new QCheckBox(tr("Use simulated Speed in slope mode"), this);
+    useSimulatedSpeed = new QCheckBox(tr("Simulate Speed From Power"), this);
     useSimulatedSpeed->setChecked(appsettings->value(this, TRAIN_USESIMULATEDSPEED, false).toBool());
+    useSimulatedSpeed->setToolTip(tr("Simulation physics uses current athlete parameters and settings\n"
+                                     "from the virtual bicycle specifications tab. For Erg Mode workouts\n"
+                                     "the slope is assumed to be zero."));
+
+    useSimulatedHypoxia = new QCheckBox(tr("Simulate Relative Hypoxia"), this);
+    useSimulatedHypoxia->setChecked(appsettings->value(this, TRAIN_USESIMULATEDHYPOXIA, false).toBool());
+    useSimulatedHypoxia->setToolTip(tr("Power used by simulation is adjusted for hypoxia relative to\n"
+                                       "ActualTrainingAltitude value in virtual bicycle specifications\n"
+                                       "tab."));
 
     autoConnect = new QCheckBox(tr("Auto-connect devices in Train View"), this);
     autoConnect->setChecked(appsettings->value(this, TRAIN_AUTOCONNECT, false).toBool());
@@ -755,6 +764,7 @@ TrainOptionsPage::TrainOptionsPage(QWidget *parent, Context *context) : QWidget(
 
     QVBoxLayout *all = new QVBoxLayout(this);
     all->addWidget(useSimulatedSpeed);
+    all->addWidget(useSimulatedHypoxia);
     all->addWidget(multiCheck);
     all->addWidget(autoConnect);
     all->addWidget(autoHide);
@@ -768,6 +778,7 @@ TrainOptionsPage::saveClicked()
 {
     // Save the train view settings...
     appsettings->setValue(TRAIN_USESIMULATEDSPEED, useSimulatedSpeed->isChecked());
+    appsettings->setValue(TRAIN_USESIMULATEDHYPOXIA, useSimulatedHypoxia->isChecked());
     appsettings->setValue(TRAIN_MULTI, multiCheck->isChecked());
     appsettings->setValue(TRAIN_AUTOCONNECT, autoConnect->isChecked());
     appsettings->setValue(TRAIN_AUTOHIDE, autoHide->isChecked());
@@ -888,7 +899,7 @@ const SimBicyclePartEntry& SimBicyclePage::GetSimBicyclePartEntry(int e)
     static const SimBicyclePartEntry arr[] = {
           // SpinBox Title                              Path to athlete value                Default Value      Decimal      Tooltip                                                                              enum
         { tr("Bicycle Mass Without Wheels (g)"     )  , GC_SIM_BICYCLE_MASSWITHOUTWHEELSG,   4000,              0,           tr("Mass of everything that isn't wheels, tires, skewers...")},                       // BicycleWithoutWheelsG
-        { tr("Front Wheel Mass (g)"                )  , GC_SIM_BICYCLE_FRONTWHEELG,          739,               0,           tr("Mass of front wheel including tires and skewers...")},                            // FrontWheelG
+        { tr("Front Wheel Mass (g)"                )  , GC_SIM_BICYCLE_FRONTWHEELG,          739,               0,           tr("Mass of front wheel excluding tires and skewers...")},                            // FrontWheelG
         { tr("Front Spoke Count"                   )  , GC_SIM_BICYCLE_FRONTSPOKECOUNT,      24,                0,           tr("")},                                                                              // FrontSpokeCount
         { tr("Front Spoke & Nipple Mass - Each (g)")  , GC_SIM_BICYCLE_FRONTSPOKENIPPLEG,    5.6,               1,           tr("Mass of a single spoke and nipple, washers, etc.")},                              // FrontSpokeNippleG
         { tr("Front Rim Mass (g)"                  )  , GC_SIM_BICYCLE_FRONTRIMG,            330,               0,           tr("")},                                                                              // FrontRimG
@@ -898,7 +909,7 @@ const SimBicyclePartEntry& SimBicyclePage::GetSimBicyclePartEntry(int e)
         { tr("Front Tube or Sealant Mass (g)"      )  , GC_SIM_BICYCLE_FRONTTUBESEALANTG,    26,                0,           tr("Mass of anything inside the tire: sealant, tube...")},                            // FrontTubeSealantG
         { tr("Front Rim Outer Radius (m)"          )  , GC_SIM_BICYCLE_FRONTOUTERRADIUSM,    .35,               3,           tr("Functional outer radius of wheel, used for computing wheel circumference")},      // FrontOuterRadiusM
         { tr("Front Rim Inner Radius (m)"          )  , GC_SIM_BICYCLE_FRONTRIMINNERRADIUSM, .3,                3,           tr("Inner radius of rim, for computing wheel inertia")},                              // FrontRimInnerRadiusM
-        { tr("Rear Wheel Mass (g)"                 )  , GC_SIM_BICYCLE_REARWHEELG,           739,               0,           tr("Mass of front wheel including tires and skewers...")},                            // RearWheelG
+        { tr("Rear Wheel Mass (g)"                 )  , GC_SIM_BICYCLE_REARWHEELG,           739,               0,           tr("Mass of rear wheel excluding tires and skewers...")},                             // RearWheelG
         { tr("Rear Spoke Count"                    )  , GC_SIM_BICYCLE_REARSPOKECOUNT,       24,                0,           tr("")},                                                                              // RearSpokeCount
         { tr("Rear Spoke & Nipple Mass - Each (g)" )  , GC_SIM_BICYCLE_REARSPOKENIPPLEG,     5.6,               1,           tr("Mass of a single spoke and nipple, washers, etc.")},                              // RearSpokeNippleG
         { tr("Rear Rim Mass (g)"                   )  , GC_SIM_BICYCLE_REARRIMG,             330,               0,           tr("")},                                                                              // RearRimG
@@ -913,7 +924,8 @@ const SimBicyclePartEntry& SimBicyclePage::GetSimBicyclePartEntry(int e)
         { tr("Coefficient of power train loss"     )  , GC_SIM_BICYCLE_Cm,                   1.0,               3,           tr("Power train loss between reported watts and wheel. For direct drive trainer like kickr there is no relevant loss and value shold be 1.0.")},      // Cm
         { tr("Coefficient of drag"                 )  , GC_SIM_BICYCLE_Cd,        (1.0 - 0.0045),               5,           tr("Coefficient of drag of rider and bicycle")},                                      // Cd
         { tr("Frontal Area (m^2)"                  )  , GC_SIM_BICYCLE_Am2,                  0.5,               2,           tr("Effective frontal area of rider and bicycle")},                                   // Am2
-        { tr("Temperature (K)"                     )  , GC_SIM_BICYCLE_Tk,                 293.15,              2,           tr("Temperature in kelvin, used with altitude to compute air density")}               // Tk
+        { tr("Temperature (K)"                     )  , GC_SIM_BICYCLE_Tk,                 293.15,              2,           tr("Temperature in kelvin, used with altitude to compute air density")},              // Tk
+        { tr("ActualTrainerAltitude (m)"           )  , GC_SIM_BICYCLE_ACTUALTRAINERALTITUDEM, 0.,              0,           tr("Actual altitude of indoor trainer, in meters")}                                   // ActualTrainerAltitudeM
     };
 
     if (e < 0 || e >= LastPart) e = 0;
@@ -1002,11 +1014,12 @@ SimBicyclePage::SetStatsLabelArray(double )
         m_SpinBoxArr[SimBicyclePage::Cm] ->value(),
         m_SpinBoxArr[SimBicyclePage::Cd] ->value(),
         m_SpinBoxArr[SimBicyclePage::Am2]->value(),
-        m_SpinBoxArr[SimBicyclePage::Tk] ->value());
+        m_SpinBoxArr[SimBicyclePage::Tk] ->value(),
+        1.);
 
     Bicycle bicycle(NULL, constants, riderMassKG, bicycleMassWithoutWheelsG / 1000., frontWheel, rearWheel);
 
-    m_StatsLabelArr[StatsLabel]              ->setText(QString(tr("------ Derived Stats -------")));
+    m_StatsLabelArr[StatsLabel]              ->setText(QString(tr("------ Derived Statistics -------")));
     m_StatsLabelArr[StatsTotalKEMass]        ->setText(QString(tr("Total KEMass:         \t%1g")).arg(bicycle.KEMass()));
     m_StatsLabelArr[StatsFrontWheelKEMass]   ->setText(QString(tr("FrontWheel KEMass:    \t%1g")).arg(bicycle.FrontWheel().KEMass() * 1000));
     m_StatsLabelArr[StatsFrontWheelMass]     ->setText(QString(tr("FrontWheel Mass:      \t%1g")).arg(bicycle.FrontWheel().MassKG() * 1000));
@@ -1017,7 +1030,6 @@ SimBicyclePage::SetStatsLabelArray(double )
     m_StatsLabelArr[StatsRearWheelEquivMass] ->setText(QString(tr("Rear Wheel EquivMass: \t%1g")).arg(bicycle.RearWheel().EquivalentMassKG() * 1000));
     m_StatsLabelArr[StatsRearWheelI]         ->setText(QString(tr("Rear Wheel I:         \t%1")).arg(bicycle.RearWheel().I()));
 }
-
 
 SimBicyclePage::SimBicyclePage(QWidget *parent, Context *context) : QWidget(parent), context(context)
 {
@@ -1031,12 +1043,11 @@ SimBicyclePage::SimBicyclePage(QWidget *parent, Context *context) : QWidget(pare
 #endif
 
     // Populate m_LabelArr and m_SpinBoxArr
-    for (int e = 0; e < LastPart; e++)
-    {
+    for (int e = 0; e < LastPart; e++) {
         AddSpecBox(e);
     }
 
-    Qt::Alignment alignment = Qt::AlignLeft | Qt::AlignVCenter;
+    Qt::Alignment alignment = Qt::AlignLeft;
 
     // Two sections. Bike mass properties are in two rows to the left.
     // Other properties like cd, ca and temp go in section to the right.
@@ -1046,45 +1057,27 @@ SimBicyclePage::SimBicyclePage(QWidget *parent, Context *context) : QWidget(pare
     int Section2Start = Section1End;
     int Section2End = BicycleParts::LastPart;
 
+    // ------------------------------------------------------------------
     // Column 0
     int column = 0;
     int row = 0;
-    for (int i = Section1Start; i < Section1End; i++) {
-        grid->addWidget(m_LabelArr[i], row, column, alignment);
-        row++;
-    }
+    grid->addWidget(new QLabel(tr("The values on this page inform the bicycle physics\n"
+                                  "models for simulating speed in trainer mode. These\n"
+                                  "values are used by smart trainers and also by the\n"
+                                  "speed simulation enabled by the 'Simulate Speed From\n"
+                                  "Power' option in the training preferences tab.")),
+                                  row, column,
+                                  4, // use 4 rows of grid
+                                  2, // span across 2 columns of grid (cols 0,2)
+                                  alignment);
 
-    // Column 1
-    column = 1;
-    row = 0;
-    for (int i = Section1Start; i < Section1End; i++) {
-        grid->addWidget(m_SpinBoxArr[i], row, column, alignment);
-        row++;
-    }
+    // Set first row +4 + 1 so there's a gap after title label.
+    int section2FirstRow = row + 5;
 
-    // Column 2
-    column = 2;
-    row = 0;
-    grid->addWidget(new QLabel("These values are used to compute correct inertia\n"
-                               "for simulated speed in trainer mode.These values\n"
-                               "only have effect when the 'Use simulated speed in\n"
-                               "slope mode' option is set on the training preferences\n"
-                               " tab."), row, column, alignment);
-
-    int section2FirstRow = row + 1;
-
-    // Now add section 2.
+    // Now add section 2 as a separate grid under above description text.
     row = section2FirstRow;
     for (int i = Section2Start; i < Section2End; i++) {
         grid->addWidget(m_LabelArr[i], row, column, alignment);
-        row++;
-    }
-
-    column++;
-
-    row = section2FirstRow;
-    for (int i = Section2Start; i < Section2End; i++) {
-        grid->addWidget(m_SpinBoxArr[i], row, column, alignment);
         row++;
     }
 
@@ -1092,7 +1085,6 @@ SimBicyclePage::SimBicyclePage(QWidget *parent, Context *context) : QWidget(pare
     // about the virtual bicycle.
 
     int statsFirstRow = row + 1;
-    column = 2;
 
     // Create Stats Labels
     for (int i = StatsLabel; i < StatsLastPart; i++) {
@@ -1104,12 +1096,40 @@ SimBicyclePage::SimBicyclePage(QWidget *parent, Context *context) : QWidget(pare
 
     row = statsFirstRow;
     for (int i = StatsLabel; i < StatsLastPart; i++) {
-        grid->addWidget(m_StatsLabelArr[i], row, column, alignment);
+        grid->addWidget(m_StatsLabelArr[i], row, column, 1, 2, alignment);
+        row++;
+    }
+
+
+    // ------------------------------------------------------------------
+    // Column 1 - physics spinboxes
+    column++;
+
+    row = section2FirstRow;
+    for (int i = Section2Start; i < Section2End; i++) {
+        grid->addWidget(m_SpinBoxArr[i], row, column, alignment);
+        row++;
+    }
+
+    // ------------------------------------------------------------------
+    // Column 2 - mass labels
+    column = 2;
+    row = 0;
+    for (int i = Section1Start; i < Section1End; i++) {
+        grid->addWidget(m_LabelArr[i], row, column, alignment);
+        row++;
+    }
+
+    // ------------------------------------------------------------------
+    // Column 3 - mass spinboxes
+    column++;
+    row = 0;
+    for (int i = Section1Start; i < Section1End; i++) {
+        grid->addWidget(m_SpinBoxArr[i], row, column, alignment);
         row++;
     }
 
     all->addLayout(grid);
-    all->addStretch();
 
     for (int i = 0; i < LastPart; i++) {
         connect(m_SpinBoxArr[i], SIGNAL(valueChanged(double)), this, SLOT(SetStatsLabelArray(double)));
@@ -3262,4 +3282,448 @@ IntervalsPage::saveClicked()
     // return change !
     if (b4.discovery != discovery) return CONFIG_DISCOVERY;
     else return 0;
+}
+
+///
+/// MeasuresConfigPage
+///
+MeasuresConfigPage::MeasuresConfigPage(QWidget *parent, Context *context) :
+    QWidget(parent), context(context), measures(nullptr)
+{
+    // get config
+    measures = new Measures();
+
+    // create all the widgets
+    QLabel *mlabel = new QLabel(tr("Measures Groups"));
+    measuresTable = new QTreeWidget(this);
+    measuresTable->headerItem()->setText(0, tr("Symbol"));
+    measuresTable->headerItem()->setText(1, tr("Name"));
+    measuresTable->setColumnCount(2);
+    measuresTable->setColumnWidth(0,200 *dpiXFactor);
+    measuresTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    measuresTable->setUniformRowHeights(true); // causes height problems when adding - in case of non-text fields
+    measuresTable->setIndentation(0);
+
+    QLabel *mflabel = new QLabel(tr("Measures Fields"));
+    measuresFieldsTable = new QTreeWidget(this);
+    measuresFieldsTable->headerItem()->setText(0, tr("Symbol"));
+    measuresFieldsTable->headerItem()->setText(1, tr("Name"));
+    measuresFieldsTable->headerItem()->setText(2, tr("Metric Units"));
+    measuresFieldsTable->headerItem()->setText(3, tr("Imperial Units"));
+    measuresFieldsTable->headerItem()->setText(4, tr("Units Factor"));
+    measuresFieldsTable->headerItem()->setText(5, tr("CSV Headers"));
+    measuresFieldsTable->setColumnCount(6);
+    measuresFieldsTable->setColumnWidth(0,200 *dpiXFactor);
+    measuresFieldsTable->setSelectionMode(QAbstractItemView::SingleSelection);
+    measuresFieldsTable->setUniformRowHeights(true); // causes height problems when adding - in case of non-text fields
+    measuresFieldsTable->setIndentation(0);
+
+    editMeasures = new QPushButton(tr("Edit"), this);
+    addMeasures = new QPushButton("+", this);
+    removeMeasures = new QPushButton("-", this);
+
+    editMeasuresField = new QPushButton(tr("Edit"), this);
+    addMeasuresField = new QPushButton("+", this);
+    removeMeasuresField = new QPushButton("-", this);
+
+#ifdef Q_OS_MAC
+    addMeasures->setText(tr("Add"));
+    removeMeasures->setText(tr("Delete"));
+    addMeasuresField->setText(tr("Add"));
+    removeMeasuresField->setText(tr("Delete"));
+#else
+    addMeasures->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+    addMeasuresField->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+    removeMeasures->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+    removeMeasuresField->setFixedSize(20*dpiXFactor,20*dpiYFactor);
+#endif
+
+    resetMeasures = new QPushButton(tr("Reset to Default"), this);
+    QLabel *warningLabel = new QLabel(tr("Saved changes take effect after restart"));
+
+    // lay it out
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+
+    mainLayout->addWidget(mlabel);
+    mainLayout->addWidget(measuresTable);
+    QHBoxLayout *xb = new QHBoxLayout();
+    xb->addStretch();
+    xb->addWidget(editMeasures);
+    xb->addStretch();
+    xb->addWidget(addMeasures);
+    xb->addWidget(removeMeasures);
+    mainLayout->addLayout(xb);
+
+    mainLayout->addWidget(mflabel);
+    mainLayout->addWidget(measuresFieldsTable);
+    QHBoxLayout *xs = new QHBoxLayout();
+    xs->addStretch();
+    xs->addWidget(editMeasuresField);
+    xs->addStretch();
+    xs->addWidget(addMeasuresField);
+    xs->addWidget(removeMeasuresField);
+    mainLayout->addLayout(xs);
+
+    QHBoxLayout *xr = new QHBoxLayout();
+    xr->addWidget(resetMeasures);
+    xr->addStretch();
+    xr->addWidget(warningLabel);
+    mainLayout->addLayout(xr);
+
+    connect(measuresTable, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), this, SLOT(measuresSelected()));
+    connect(measuresTable, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(measuresDoubleClicked(QTreeWidgetItem*, int)));
+    connect(resetMeasures, SIGNAL(clicked()), this, SLOT(resetMeasuresClicked()));
+    connect(editMeasures, SIGNAL(clicked()), this, SLOT(editMeasuresClicked()));
+    connect(removeMeasures, SIGNAL(clicked(bool)), this, SLOT(removeMeasuresClicked()));
+    connect(addMeasures, SIGNAL(clicked(bool)), this, SLOT(addMeasuresClicked()));
+
+    connect(measuresFieldsTable, SIGNAL(itemDoubleClicked(QTreeWidgetItem*, int)), this, SLOT(measuresFieldDoubleClicked(QTreeWidgetItem*, int)));
+    connect(editMeasuresField, SIGNAL(clicked()), this, SLOT(editMeasuresFieldClicked()));
+    connect(removeMeasuresField, SIGNAL(clicked(bool)), this, SLOT(removeMeasuresFieldClicked()));
+    connect(addMeasuresField, SIGNAL(clicked(bool)), this, SLOT(addMeasuresFieldClicked()));
+
+    refreshMeasuresTable();
+}
+
+MeasuresConfigPage::~MeasuresConfigPage()
+{
+    if (measures != nullptr) delete measures;
+}
+
+qint32
+MeasuresConfigPage::saveClicked()
+{
+    measures->saveConfig();
+    return 0;
+}
+
+void
+MeasuresConfigPage::refreshMeasuresTable()
+{
+    // remove existing rows
+    measuresTable->clear();
+
+    // add a row for each measures group
+    foreach (MeasuresGroup* group, measures->getGroups()) {
+
+        QTreeWidgetItem *add = new QTreeWidgetItem(measuresTable->invisibleRootItem());
+        add->setText(0, group->getSymbol());
+        add->setText(1, group->getName());
+
+        measuresTable->setCurrentItem(add); // select the last added
+    }
+    measuresSelected();
+}
+
+void MeasuresConfigPage::measuresSelected()
+{
+    // lets find the one we have selected...
+    int row = measuresTable->invisibleRootItem()->indexOfChild(measuresTable->currentItem());
+    if (row < 0) return; // nothing selected
+
+    // update measures series table to reflect the selection
+    refreshMeasuresFieldsTable();
+}
+
+void
+MeasuresConfigPage::resetMeasuresClicked()
+{
+    // Are you sure ?
+    QMessageBox msgBox;
+    msgBox.setText(tr("Are you sure you want to remove Measures customizations and reset to default configuration?"));
+    msgBox.setInformativeText(tr("This action takes effect immediately and cannot be reverted"));
+    QPushButton *resetButton = msgBox.addButton(tr("Reset"),QMessageBox::YesRole);
+    msgBox.setStandardButtons(QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    msgBox.setIcon(QMessageBox::Critical);
+    msgBox.exec();
+
+    // nope, don't want to
+    if(msgBox.clickedButton() != resetButton) return;
+
+    QFile::remove(QDir(gcroot).canonicalPath() + "/measures.ini");
+    delete measures;
+    measures = new Measures();
+    refreshMeasuresTable();
+}
+
+void
+MeasuresConfigPage::editMeasuresClicked()
+{
+    measuresDoubleClicked(measuresTable->currentItem(), 0);
+}
+
+void
+MeasuresConfigPage::measuresDoubleClicked(QTreeWidgetItem *item, int)
+{
+    // nothing selected
+    if (item == nullptr) return;
+
+    // find group
+    MeasuresGroup* group = measures->getGroup(measuresTable->invisibleRootItem()->indexOfChild(item));
+
+    // edit
+    QString symbol = group->getSymbol();
+    QString name = group->getName();
+    MeasuresSettingsDialog *dialog = new MeasuresSettingsDialog(this, symbol, name);
+    if (dialog->exec() == QDialog::Accepted) {
+
+        group->setSymbol(symbol);
+        item->setText(0, symbol);
+        group->setName(name);
+        item->setText(1, name);
+    }
+}
+
+void
+MeasuresConfigPage::addMeasuresClicked()
+{
+    QString symbol, name;
+    MeasuresSettingsDialog *dialog = new MeasuresSettingsDialog(this, symbol, name);
+    if (dialog->exec() == QDialog::Accepted) {
+
+        measures->addGroup(new MeasuresGroup(symbol, name, QStringList(), QStringList(), QStringList(), QStringList(), QList<double>(), QList<QStringList>()));
+        refreshMeasuresTable();
+    }
+}
+
+void
+MeasuresConfigPage::removeMeasuresClicked()
+{
+    // lets find the one we have selected...
+    int row = measuresTable->invisibleRootItem()->indexOfChild(measuresTable->currentItem());
+    if (row < 0) return; // nothing selected
+
+    measures->removeGroup(row);
+
+    refreshMeasuresTable();
+}
+
+void
+MeasuresConfigPage::refreshMeasuresFieldsTable()
+{
+    // find the current Measures Group
+    MeasuresGroup* group = measures->getGroup(measuresTable->invisibleRootItem()->indexOfChild(measuresTable->currentItem()));
+    if (group == nullptr) return; // just in case...
+
+    // remove existing rows
+    measuresFieldsTable->clear();
+
+    // lets populate
+    for (int i=0; i<group->getFieldSymbols().count(); i++) {
+
+        QTreeWidgetItem *add = new QTreeWidgetItem(measuresFieldsTable->invisibleRootItem());
+        MeasuresField field = group->getField(i);
+        add->setText(0, field.symbol);
+        add->setText(1, field.name);
+        add->setText(2, field.metricUnits);
+        add->setText(3, field.imperialUnits);
+        add->setText(4, QString::number(field.unitsFactor));
+        add->setText(5, field.headers.join(","));
+
+        measuresFieldsTable->setCurrentItem(add); // select the last added
+    }
+}
+
+void
+MeasuresConfigPage::editMeasuresFieldClicked()
+{
+    measuresFieldDoubleClicked(measuresFieldsTable->currentItem(), 0);
+}
+
+void
+MeasuresConfigPage::measuresFieldDoubleClicked(QTreeWidgetItem *item, int)
+{
+    // nothing selected
+    if (item == nullptr) return;
+
+    // find group
+    MeasuresGroup* group = measures->getGroup(measuresTable->invisibleRootItem()->indexOfChild(measuresTable->currentItem()));
+
+    // find row
+    int row = measuresFieldsTable->invisibleRootItem()->indexOfChild(item);
+
+    // edit
+    MeasuresField field = group->getField(row);
+    MeasuresFieldSettingsDialog *dialog = new MeasuresFieldSettingsDialog(this, field);
+    if (dialog->exec() == QDialog::Accepted) {
+
+        group->setField(row, field);
+        item->setText(0, field.symbol);
+        item->setText(1, field.name);
+        item->setText(2, field.metricUnits);
+        item->setText(3, field.imperialUnits);
+        item->setText(4, QString::number(field.unitsFactor));
+        item->setText(5, field.headers.join(","));
+    }
+}
+
+void
+MeasuresConfigPage::addMeasuresFieldClicked()
+{
+    // lets find the one we have selected...
+    int index=measuresTable->currentIndex().row();
+    if (index <0) return;
+
+    // find group
+    MeasuresGroup* group = measures->getGroup(measuresTable->invisibleRootItem()->indexOfChild(measuresTable->currentItem()));
+    if (group == nullptr) return;
+
+    MeasuresField field;
+    MeasuresFieldSettingsDialog *dialog = new  MeasuresFieldSettingsDialog(this, field);
+    if (dialog->exec() == QDialog::Accepted) {
+
+        group->addField(field);
+        refreshMeasuresFieldsTable();
+    }
+}
+
+void
+MeasuresConfigPage::removeMeasuresFieldClicked()
+{
+    // lets find the one we have selected...
+    int row = measuresFieldsTable->invisibleRootItem()->indexOfChild(measuresFieldsTable->currentItem());
+    if (row < 0) return; // nothing selected
+
+    // find the current Measures Group
+    MeasuresGroup* group = measures->getGroup(measuresTable->invisibleRootItem()->indexOfChild(measuresTable->currentItem()));
+
+    group->removeField(row);
+    refreshMeasuresFieldsTable();
+}
+
+///
+/// MeasuresSettingsDialog
+///
+MeasuresSettingsDialog::MeasuresSettingsDialog(QWidget *parent, QString &symbol, QString &name) : QDialog(parent), symbol(symbol), name(name)
+{
+    setWindowTitle("Measures Group");
+    setAttribute(Qt::WA_DeleteOnClose);
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint | Qt::Tool);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QFormLayout *form = new QFormLayout();
+    mainLayout->addLayout(form);
+
+
+    QLabel *symbolLabel = new QLabel(tr("Symbol"), this);
+    symbolEdit = new QLineEdit(this);
+    symbolEdit->setText(symbol);
+    form->addRow(symbolLabel, symbolEdit);
+
+    QLabel *nameLabel = new QLabel(tr("Name"), this);
+    nameEdit = new QLineEdit(this);
+    nameEdit->setText(name);
+    form->addRow(nameLabel, nameEdit);
+
+    form->addRow(new QLabel("",this), new QLabel("", this));
+    mainLayout->addStretch();
+
+    cancelButton = new QPushButton(tr("Cancel"), this);
+    okButton = new QPushButton(tr("OK"), this);
+    QHBoxLayout *buttons = new QHBoxLayout();
+    buttons->addStretch();
+    buttons->addWidget(cancelButton);
+    buttons->addWidget(okButton);
+    mainLayout->addLayout(buttons);
+
+    connect(okButton, SIGNAL(clicked(bool)), this, SLOT(okClicked()));
+    connect(cancelButton, SIGNAL(clicked(bool)), this, SLOT(reject()));
+}
+
+void MeasuresSettingsDialog::okClicked()
+{
+    // lets just check we have something etc
+    if (symbolEdit->text() == "" || nameEdit->text() == "") {
+
+        QMessageBox::warning(this, tr("Error"), tr("Symbol/Name cannot be blank"));
+        return;
+    } else {
+
+        symbol = symbolEdit->text();
+        name = nameEdit->text();
+        accept();
+    }
+}
+
+
+///
+/// MeasuresFieldSettingsDialog
+///
+MeasuresFieldSettingsDialog::MeasuresFieldSettingsDialog(QWidget *parent, MeasuresField &field) : QDialog(parent), field(field)
+{
+    setWindowTitle("Measures Field");
+    setAttribute(Qt::WA_DeleteOnClose);
+    setWindowFlags(windowFlags() | Qt::WindowStaysOnTopHint | Qt::Tool);
+
+    QVBoxLayout *mainLayout = new QVBoxLayout(this);
+    QFormLayout *form = new QFormLayout();
+    mainLayout->addLayout(form);
+
+
+    QLabel *symbolLabel = new QLabel(tr("Symbol"), this);
+    symbolEdit = new QLineEdit(this);
+    symbolEdit->setText(field.symbol);
+    form->addRow(symbolLabel, symbolEdit);
+
+    QLabel *nameLabel = new QLabel(tr("Name"), this);
+    nameEdit = new QLineEdit(this);
+    nameEdit->setText(field.name);
+    form->addRow(nameLabel, nameEdit);
+
+    QLabel *metricUnitsLabel = new QLabel(tr("Metric Units"), this);
+    metricUnitsEdit = new QLineEdit(this);
+    metricUnitsEdit->setText(field.metricUnits);
+    form->addRow(metricUnitsLabel, metricUnitsEdit);
+
+    QLabel *imperialUnitsLabel = new QLabel(tr("Imperial Units"), this);
+    imperialUnitsEdit = new QLineEdit(this);
+    imperialUnitsEdit->setText(field.imperialUnits);
+    form->addRow(imperialUnitsLabel, imperialUnitsEdit);
+
+    QLabel *unitsFactorLabel = new QLabel(tr("Units Conversion"), this);
+    unitsFactorEdit = new QDoubleSpinBox(this);
+    unitsFactorEdit->setDecimals(5);
+    unitsFactorEdit->setValue(field.unitsFactor);
+    form->addRow(unitsFactorLabel, unitsFactorEdit);
+
+    QLabel *headersLabel = new QLabel(tr("CSV Headers"), this);
+    headersEdit = new QLineEdit(this);
+    headersEdit->setText(field.headers.join(","));
+    form->addRow(headersLabel, headersEdit);
+
+    form->addRow(new QLabel("",this), new QLabel("", this));
+    mainLayout->addStretch();
+
+    cancelButton = new QPushButton(tr("Cancel"), this);
+    okButton = new QPushButton(tr("OK"), this);
+    QHBoxLayout *buttons = new QHBoxLayout();
+    buttons->addStretch();
+    buttons->addWidget(cancelButton);
+    buttons->addWidget(okButton);
+    mainLayout->addLayout(buttons);
+
+    connect(okButton, SIGNAL(clicked(bool)), this, SLOT(okClicked()));
+    connect(cancelButton, SIGNAL(clicked(bool)), this, SLOT(reject()));
+}
+
+void MeasuresFieldSettingsDialog::okClicked()
+{
+    // lets just check we have something etc
+    if (symbolEdit->text() == "" || nameEdit->text() == "") {
+
+        QMessageBox::warning(this, tr("Error"), tr("Name/Symbol cannot be blank"));
+
+        return;
+    } else {
+
+        field.symbol = symbolEdit->text();
+        field.name = nameEdit->text();
+        field.metricUnits = metricUnitsEdit->text();
+        field.imperialUnits = imperialUnitsEdit->text();
+        field.unitsFactor = unitsFactorEdit->value();
+        field.headers = headersEdit->text().split(",");
+    }
+
+    accept();
 }
