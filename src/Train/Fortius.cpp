@@ -62,7 +62,7 @@ Fortius::Fortius(QObject *parent) : QThread(parent)
     weight = DEFAULT_WEIGHT;
     windSpeed = DEFAULT_WINDSPEED;
     rollingResistance = DEFAULT_Crr;
-    windResistance = DEFAULT_CdA;
+    windResistance = DEFAULT_CdARho;
     brakeCalibrationForce_N = appsettings->value(this, FORTIUS_CALIBRATION, DEFAULT_CALIBRATION_FORCE_N).toDouble();
     brakeCalibrationFactor = DEFAULT_CALIBRATION_FACTOR;
     powerScaleFactor = DEFAULT_SCALING;
@@ -434,6 +434,10 @@ void Fortius::run()
         		return; // couldn't write to the device
 			}
 			
+            // The controller updates faster than the brake. Setting this to a low value (<50ms) increases the frequency of controller
+            // only packages (24byte). Tacx software uses 100ms.
+            msleep(50);
+
             int actualLength = readMessage();
 			if (actualLength < 0) {
 				qDebug() << "usb read error " << actualLength;
@@ -558,11 +562,6 @@ void Fortius::run()
                         
             timer.restart();
         }
-
-        
-        // The controller updates faster than the brake. Setting this to a low value (<50ms) increases the frequency of controller
-        // only packages (24byte). Tacx software uses 100ms.
-        msleep(50);
     }
 }
 
@@ -732,14 +731,14 @@ double Fortius::NewtonsForV(double v) const
     const double gradient = this->gradient;
     const double m        = this->weight;
     const double Crr      = this->rollingResistance;
-    const double CdA      = this->windResistance;
+    const double CdARho   = this->windResistance;
     const double v_wind   = this->windSpeed;
     pvars.unlock();
 
     // Resistive forces due to gravity, rolling resistance and aerodynamic drag
     const double F_slope = gradient/100 * m * g;
     const double F_roll  = Crr * m * g;
-    const double F_air   = 0.5 * CdA * (v + v_wind) * abs(v + v_wind);
+    const double F_air   = 0.5 * CdARho * (v + v_wind) * abs(v + v_wind);
 
     // Return sum of resistive forces
     return F_slope + F_roll + F_air;
