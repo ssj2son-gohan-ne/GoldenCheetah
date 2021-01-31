@@ -132,6 +132,7 @@ private:
             SLOPE_Command[12];
     
     // Utility and BG Thread functions
+    int openDevice();
     int openPort();
     int closePort();
 
@@ -170,6 +171,15 @@ private:
     volatile double windSpeed;
     volatile double rollingResistance;
     volatile double windResistance;
+
+    // Model version
+    unsigned int motorBrakeFirmwareVersion;
+    unsigned int motorBrakeRawSerialNumber;
+    unsigned int motorBrakeVersion;
+    unsigned int motorBrakeType;
+    unsigned int motorBrakeYear;
+    unsigned int motorBrakeSerialNumber;
+    bool motorBrake;
     
     // i/o message holder
     uint8_t buf[64];
@@ -196,6 +206,7 @@ private:
     // Source: https://github.com/totalreverse/ttyT1941/wiki
     //         - "speed = 'kph * 289.75'"
     static inline double rawSpeed_to_ms (double raw) { return raw / 1043.1; } // 289.75*3.6
+    static inline double ms_to_rawSpeed (double raw) { return raw * 1043.1; } // 289.75*3.6
 
     // Convert double value to type T, clipping to range of type T, if necessary
     template <typename T>

@@ -1780,12 +1780,8 @@ void TrainSidebar::guiUpdate()           // refreshes the telemetry
                         }
 
                         if (!fAltitudeSet) {
-                            // For classic rlv with no location data:
-                            // Estimate vertical change based upon time passed and slope.
-                            // Note this isn't exactly right but is very close - we should use the previous slope for the time passed.
-                            double altitudeDeltaMeters = slope * (10 * distanceTick); // ((slope / 100) * distanceTick) * 1000
-
-                            displayAltitude += altitudeDeltaMeters;
+                            // Since we have gradient, we also have altitude
+                            displayAltitude = ergFileQueryAdapter.altitudeAt(displayWorkoutDistance * 1000, displayWorkoutLap);
                         }
 
                         rtData.setSlope(slope);
@@ -2419,7 +2415,11 @@ void TrainSidebar::updateCalibration()
                 break;
 
             case CALIBRATION_STATE_REQUESTED:
-                status = QString(tr("Give the pedal a kick to start calibration...\nThe motor will run until calibration is complete."));
+                if (calibrationZeroOffset == 0)
+                    status = QString(tr("Give the pedal a kick to start calibration...\nThe motor will run until calibration is complete."));
+                else
+                    status = QString(tr("Allow wheel speed to settle, DO NOT PEDAL...\nThe motor will run until calibration is complete."));
+
                 break;
 
             case CALIBRATION_STATE_STARTING:
