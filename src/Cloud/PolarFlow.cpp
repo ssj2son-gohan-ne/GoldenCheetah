@@ -220,11 +220,11 @@ PolarFlow::readFileCompleted()
 }
 
 // development put on hold - AccessLink API compatibility issues with Desktop applications
-#if 0
+//#if 0
 static bool addPolarFlow() {
     CloudServiceFactory::instance().addService(new PolarFlow(NULL));
     return true;
 }
 
 static bool add = addPolarFlow();
-#endif
+//#endif
