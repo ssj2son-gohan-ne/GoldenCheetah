@@ -45,7 +45,7 @@ class UserMetricSettings {
 
     public:
 
-        qint16 getFingerprint() const {
+        qint16 getCRC() const {
 
             // mostly used to see if it changed when editing
             QByteArray ba = QString(this->symbol +
@@ -78,7 +78,8 @@ class UserMetricSettings {
         double  conversion,
                 conversionSum;
 
-        QString program;
+        QString program,
+                fingerprint; // condensed form of program
 };
 
 class EditUserMetricDialog : public QDialog {
