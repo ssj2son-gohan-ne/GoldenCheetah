@@ -38,7 +38,7 @@ TcxParser::TcxParser (RideFile* rideFile, QList<RideFile*> *rides) : rideFile(ri
     if (GarminHWM.isNull() || GarminHWM.toInt() == 0) GarminHWM.setValue(25); // default to 25 seconds.
     first = true;
     creator = false;
-    training = false; // extra sports description
+    training = false; // detailed-sport-info
 
 }
 
@@ -445,7 +445,7 @@ TcxParser::endElement( const QString&, const QString&, const QString& qName)
         training = false;
     } else if (training && qName == "Name") {
         if (!buffer.isEmpty())
-            rideFile->setTag("Extra Sports Description", buffer);
+            rideFile->setTag("Detailed Sport Info", buffer);
     }
     return true;
 }
