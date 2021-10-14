@@ -58,3 +58,15 @@ build.pro.user
 build.pro.user.*
 doc/contrib/WASP Packet Protocol.pdf
 
+
+# SIP Files
+src/Python/SIP/goldencheetah.sip
+src/Python/SIP/sipAPIgoldencheetah.h
+src/Python/SIP/sipgoldencheetahBindings.cpp
+src/Python/SIP/sipgoldencheetahcmodule.cpp
+src/Python/SIP/sipgoldencheetahPythonDataSeries.cpp
+src/Python/SIP/sipgoldencheetahPythonXDataSeries.cpp
+src/Python/SIP/sipgoldencheetahQString.cpp
+src/Python/SIP/sipgoldencheetahQStringList.cpp
+src/Python/SIP/
+
