@@ -52,7 +52,7 @@
 
 #ifndef POLARFLOW_DEBUG
 // TODO(gille): This should be a command line flag.
-#define POLARFLOW_DEBUG false //true|false
+#define POLARFLOW_DEBUG true //true|false
 #endif
 #ifdef Q_CC_MSVC
 #define printd(fmt, ...) do {                                                \
