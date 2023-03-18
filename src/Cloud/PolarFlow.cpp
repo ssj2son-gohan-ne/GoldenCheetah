@@ -53,7 +53,7 @@
 #ifndef POLARFLOW_DEBUG
 // TODO(gille): This should be a command line flag.
 // Default: "false" - false|true
-#define POLARFLOW_DEBUG false
+#define POLARFLOW_DEBUG true //true|false
 #endif
 #ifdef Q_CC_MSVC
 #define printd(fmt, ...) do {                                                \
@@ -89,7 +89,7 @@
 #ifndef POLARFLOW_COMMITTRANSACTIONOVERRIDE
 // committing the transaction is done by default "false" - false|true
 // for debuging purposes you have the posibility to override and not commiting the transaction
-#define POLARFLOW_COMMITTRANSACTIONOVERRIDE "false"
+#define POLARFLOW_COMMITTRANSACTIONOVERRIDE "true"
 #endif
 
 
