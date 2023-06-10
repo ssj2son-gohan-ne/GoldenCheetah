@@ -158,7 +158,7 @@ PolarFlow::open(QStringList &errors) //open transaction
         errors << tr("You must authorise with Polar Flow first");
         return false;
     }
-
+/*
   // Command-URL: POST https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions
     QString url = QString("%1/v3/users/%2/exercise-transactions")
             .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
@@ -249,9 +249,12 @@ PolarFlow::open(QStringList &errors) //open transaction
         } // if override close
         printd("There is no new training session data available");
     } // if close
+
+*/
     return true;
 }
 
+/*
 bool
 PolarFlow::commit(QStringList &errors) //commit transaction
 {
@@ -320,6 +323,7 @@ PolarFlow::commit(QStringList &errors) //commit transaction
     printd("Commit close - end\n");
     return true;
 }
+*/
 
 bool
 PolarFlow::close()
@@ -470,11 +474,11 @@ PolarFlow::readdir(QString path, QStringList &errors)
         return returning;
     }
 
- //Command URL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}
-    QString url = QString("%1/v3/users/%2/exercise-transactions/%3")
-          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString());
+    //Command URL: GET https://www.polaraccesslink.com/v3/exercises
+    QString url = QString("%1/v3/exercises")
+          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString());
+          //.arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+          //.arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString());
 
     printd("URL used: %s\n", url.toStdString().c_str());
 
@@ -494,35 +498,28 @@ PolarFlow::readdir(QString path, QStringList &errors)
 
     // if successful, lets unpack
     int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-    printd("readdir - HTTP response: %d: %s\n", reply->error(), reply->errorString().toStdString().c_str());
-    printd("readdir - HTTP response status code: %d\n", statusCode);
+    printd("HTTP response: %d: %s\n", reply->error(), reply->errorString().toStdString().c_str());
+    printd("HTTP response status code: %d\n", statusCode);
+    //qDebug() << "readdir - reply: " << reply;
 
     // Save statusCode 200=OK, 204=No Content
     setSetting(GC_POLARFLOW_STATUS_CODE, statusCode);
     CloudServiceFactory::instance().saveSettings(this, context);
 
-    // Answer-URL https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}
-    // Returns a list of hyperlinks to available exercises
-    // https://www.polar.com/accesslink-api/?shell#list-exercises
-    /*
-    {
-      "exercises": [
-        "https://www.polaraccesslink.com/v3/users/12/exercise-transactions/34/exercises/56",
-        "https://www.polaraccesslink.com/v3/users/12/exercise-transactions/34/exercises/120"
-      ]
-    }
-    */
+    // Answer Exercises list
     QByteArray listExercises_Ary = reply->readAll();
 
     printd("readdir - listExercises_Array: %s\n", listExercises_Ary.toStdString().c_str());
 
     // parse JSON payload
     QJsonParseError listExercises_Doc_parseError;
-    QJsonDocument listExercises_Doc;
+    QJsonArray listExercises_Doc;
+//    QJsonDocument listExercises_Doc;
                   listExercises_Doc = QJsonDocument::fromJson(listExercises_Ary, &listExercises_Doc_parseError);
     printd("readdir - listExercises_Document - Error Number: %d - Error String: %s \n", listExercises_Doc_parseError.error, listExercises_Doc_parseError.errorString().toStdString().c_str());
-    //qDebug() << "readdir - listExercises_Document - Url-List to Execerises: " << listExercises_Doc;
+    qDebug() << "readdir - listExercises_Document - Url-List to Execerises: " << listExercises_Doc;
 
+    QJsonArray exercises30days_Ary;
     QJsonObject exercisesUrlList_Obj;
     QJsonArray exerciseUrls_Ary;
     QString exerciseUrl_Str;
@@ -536,11 +533,12 @@ PolarFlow::readdir(QString path, QStringList &errors)
     // populating array with urls to activites
     if (listExercises_Doc_parseError.error == QJsonParseError::NoError) {
 
+        exercises30days_Ary = listExercises_Doc.;
         exercisesUrlList_Obj = listExercises_Doc.object();
-        //qDebug() << "readdir - listExercises_Object - Url-List to Execerises: " << exercisesUrlList_Obj;
+        qDebug() << "readdir - listExercises_Object - Url-List to Execerises: " << exercisesUrlList_Obj;
 
         exerciseUrls_Ary = exercisesUrlList_Obj["exercises"].toArray();
-        //qDebug() << "readdir - exerciseUrls_Ary - exerciseUrls: " << exerciseUrls_Ary;
+        qDebug() << "readdir - exerciseUrls_Ary - exerciseUrls: " << exerciseUrls_Ary;
 
         activityCounter = exerciseUrls_Ary.size() + activityCounterDelta;
         setSetting(GC_POLARFLOW_ACTIVITY_COUNTER, activityCounter);
@@ -2407,7 +2405,7 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
         if (commitTransactionOverride == "false") {
             printd("no override, so we commit the transaction with \n");
             printd("we fetched all available exercises: %s = %s \n",exercise_id_Str.toStdString().c_str() ,lastListedExerciseId.toStdString().c_str());
-            commit(emptyerrorlist);
+            //commit(emptyerrorlist);
         }
 
      }
