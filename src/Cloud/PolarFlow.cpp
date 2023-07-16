@@ -31,6 +31,8 @@
  *  - getting samples and write the to a new Ridefile works
  *  - working with samples and combine them with downloaded file -> needs to be done
  *  - choose if downloaded file is choosen or usage of samples  -> needs to be done
+ *
+ * next: readdir test_ary No 494
 */
 
 #include "PolarFlow.h"
@@ -53,7 +55,7 @@
 #ifndef POLARFLOW_DEBUG
 // TODO(gille): This should be a command line flag.
 // Default: "false" - false|true
-#define POLARFLOW_DEBUG false
+#define POLARFLOW_DEBUG true
 #endif
 #ifdef Q_CC_MSVC
 #define printd(fmt, ...) do {                                                \
@@ -508,17 +510,30 @@ PolarFlow::readdir(QString path, QStringList &errors)
 
     // Answer Exercises list
     QByteArray listExercises_Ary = reply->readAll();
-
     printd("readdir - listExercises_Array: %s\n", listExercises_Ary.toStdString().c_str());
+               //listExercises_Ary.chop(1);
+               //auto it = listExercises_Ary.erase(listExercises_Ary.cbegin());
+               //auto it = listExercises_Ary.erase(listExercises_Ary.cend());
+               //listExercises_Ary.replace(1,1,""); // remove "["
+               //listExercises_Ary.replace(listExercises_Ary.size(),1,""); // remove "]"
+    //printd("readdir - listExercises_Array shortend: %s\n", listExercises_Ary.toStdString().c_str());
+               //listExercises_Ary.insert(0, QByteArray("exercises: ")); // add first
+               //listExercises_Ary.prepend(QByteArray("exercises: ")); // add first
+    //printd("readdir - listExercises_Array extended: %s\n", listExercises_Ary.toStdString().c_str());
 
     // parse JSON payload
     QJsonParseError listExercises_Doc_parseError;
-    QJsonArray listExercises_Doc;
-//    QJsonDocument listExercises_Doc;
-                  listExercises_Doc = QJsonDocument::fromJson(listExercises_Ary, &listExercises_Doc_parseError);
-    printd("readdir - listExercises_Document - Error Number: %d - Error String: %s \n", listExercises_Doc_parseError.error, listExercises_Doc_parseError.errorString().toStdString().c_str());
-    qDebug() << "readdir - listExercises_Document - Url-List to Execerises: " << listExercises_Doc;
+    QJsonDocument listExercises_Doc = QJsonDocument::fromJson(listExercises_Ary, &listExercises_Doc_parseError);
+    printd("listExercises_Array - Error Number: %d - Error String: %s \n", listExercises_Doc_parseError.error, listExercises_Doc_parseError.errorString().toStdString().c_str());
+    qDebug() << "readdir - listExercises_Document: " << listExercises_Doc;  // << "size: " << listExercises_Doc.size();
 
+    //QJsonArray test = QJsonDocument::array() const;
+    QJsonArray test_Ary = listExercises_Doc.array();
+    qDebug() << "readdir - test_Array: " << test_Ary << " - size: " << test_Ary.size();
+
+    // WORKS TILL HERE NOW CYCLE THROUGHT ELEMENTS OF test_Array and populate list of exercises
+
+    QJsonObject exercises30days_Obj;
     QJsonArray exercises30days_Ary;
     QJsonObject exercisesUrlList_Obj;
     QJsonArray exerciseUrls_Ary;
@@ -533,7 +548,10 @@ PolarFlow::readdir(QString path, QStringList &errors)
     // populating array with urls to activites
     if (listExercises_Doc_parseError.error == QJsonParseError::NoError) {
 
-        exercises30days_Ary = listExercises_Doc.;
+        //dddoes notr t work
+        exercises30days_Obj = listExercises_Doc.object();
+        qDebug() << "readdir - exercises30days_Object: " << exercises30days_Obj;
+//        exercises30days_Ary = exercises30days_Obj[].toArray();
         exercisesUrlList_Obj = listExercises_Doc.object();
         qDebug() << "readdir - listExercises_Object - Url-List to Execerises: " << exercisesUrlList_Obj;
 
@@ -1022,7 +1040,7 @@ PolarFlow::createSampleStream(QJsonDocument &sampletype_Doc, int actualSampleLoo
                    timeData_Ary.append(timeSampleData_Lst.at(i));
                    }
         printd("actualSampleLoopNumber: %d - time_Array no of elements: %d \n", loopCounterSampleTypes,  timeData_Ary.size());
-        //qDebug() << "createSampleStream - time_Array:" << timeData_Ary;
+        //qDebug() << " - time_Array:" << timeData_Ary;
 
         QJsonObject timeStream_Obj;
                     timeStream_Obj.insert("type", "time");
