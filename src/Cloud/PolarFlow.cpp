@@ -347,14 +347,18 @@ PolarFlow::isoDateToSeconds(QString &string)
     int hoursAreZero = 0;
     int isoDateStringLength =  0;
     int positionMark = 0;
-    int positionCorrector = 1;
+    int positionCorrector = 1; // char position counter, counts from zero
     int secondsStringLength =  0;
 
+    bool containsPoint = false;
     bool containsSeconds = false;
     bool containsMinutes = false;
     bool containsHours = false;
 
     // find out if ISODate contains all needed conversation info
+    if (duration_str.contains(".")) {
+        containsPoint = true;
+    }
     if (duration_str.contains("S")) {
         containsSeconds = true;
     }
@@ -371,23 +375,27 @@ PolarFlow::isoDateToSeconds(QString &string)
         printd("duration_String ISO after prepend: %s\n", duration_str.toStdString().c_str());
     }
 
-    // filling up string for seconds, if not fully provided
-    if (containsSeconds == true) { // PT4H51M38S: 38S->38.000S
+    // filling up ISODate's string for seconds, if not fully provided - missing "."
+    if (containsSeconds == true && containsPoint == false) { // PT4H51M38S: 38S->38.000S - PT4M4S->PT4M4.000S
         isoDateStringLength = duration_str.size();
         if (containsMinutes == true) {
             positionMark = duration_str.indexOf("M");
-            printd("M is char at psoition: %d\n", positionMark);
+            printd("M is char at position: %d\n", positionMark);
         }
         if (containsMinutes == false) {
             positionMark = duration_str.indexOf("H");
-            printd("H is char at psoition: %d\n", positionMark);
+            printd("H is char at position: %d\n", positionMark);
         }
         // lets find out how many chars are here for seconds
         secondsStringLength = isoDateStringLength - positionMark - positionCorrector;
         printd("ISODate is provided with %d chars\n", isoDateStringLength);
         printd("Seconds are provided with %d chars\n", secondsStringLength);
 
-        if (secondsStringLength < 4) {
+        if (secondsStringLength == 2) { // 4S->4.000S
+            duration_str.replace("S", ".000S");
+            printd("duration_String ISO after fillup: %s\n", duration_str.toStdString().c_str());
+        }
+        if (secondsStringLength == 3) { // 38S->38.000S
             duration_str.replace("S", ".000S");
             printd("duration_String ISO after fillup: %s\n", duration_str.toStdString().c_str());
         }
@@ -417,7 +425,7 @@ PolarFlow::isoDateToSeconds(QString &string)
 
     QTime duration_astime = QTime::fromString(duration_strtime, "h:m:s.z");
     //qDebug() << "isoDateToSeconds - duration as time:" << duration_astime;
-    printd("duration prepared as time : %s\n", duration_astime.toString());
+    //printd("duration prepared as time : %s\n", duration_astime.toString());
 
     int durationHours = duration_astime.hour();
     int durationMinutes = duration_astime.minute();
