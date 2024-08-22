@@ -57,21 +57,21 @@
 #endif
 #ifdef Q_CC_MSVC
 #define printd(fmt, ...) do {                                                \
-    if (POLARFLOW_DEBUG) {                                 \
+if (POLARFLOW_DEBUG) {                                 \
         printf("[%s:%d %s] " fmt , __FILE__, __LINE__,        \
                __FUNCTION__, __VA_ARGS__);                    \
         fflush(stdout);                                       \
-    }                                                         \
+}                                                         \
 } while(0)
 #else
 #define printd(fmt, args...)                                            \
-    do {                                                                \
+do {                                                                \
         if (POLARFLOW_DEBUG) {                                       \
             printf("[%s:%d %s] " fmt , __FILE__, __LINE__,              \
                    __FUNCTION__, ##args);                               \
             fflush(stdout);                                             \
-        }                                                               \
-    } while(0)
+    }                                                               \
+} while(0)
 #endif
 
 #ifndef POLARFLOW_IMPORTTYPE
@@ -92,7 +92,6 @@
 // for debuging purposes you have the posibility to override and not commiting the transaction
 #define POLARFLOW_COMMITTRANSACTIONOVERRIDE "false"
 #endif
-
 
 PolarFlow::PolarFlow(Context *context) : CloudService(context), context(context) {
 
@@ -159,10 +158,10 @@ PolarFlow::open(QStringList &errors) //open transaction
         return false;
     }
 
-  // Command-URL: POST https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions
+    // Command-URL: POST https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions
     QString url = QString("%1/v3/users/%2/exercise-transactions")
-            .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-            .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString());
+                      .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                      .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString());
 
     printd("URL used: %s\n", url.toStdString().c_str());
 
@@ -241,7 +240,7 @@ PolarFlow::open(QStringList &errors) //open transaction
     } //if close
 
     if (statusCode == 204) {
-    //else {
+        //else {
         printd("check override commit - Override: %s \n ", commitTransactionOverride.toStdString().c_str());
         if (commitTransactionOverride == "false") {
             printd("no override, so we commit the transaction \n");
@@ -276,9 +275,9 @@ PolarFlow::commit(QStringList &errors) //commit transaction
 
     // Command-URL: PUT https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}
     QString url = QString("%1/v3/users/%2/exercise-transactions/%3")
-            .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-            .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-            .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString());
+                      .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                      .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                      .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString());
 
     printd("URL used: %s\n", url.toStdString().c_str());
 
@@ -470,11 +469,11 @@ PolarFlow::readdir(QString path, QStringList &errors)
         return returning;
     }
 
- //Command URL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}
+    //Command URL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}
     QString url = QString("%1/v3/users/%2/exercise-transactions/%3")
-          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString());
+                      .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                      .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                      .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString());
 
     printd("URL used: %s\n", url.toStdString().c_str());
 
@@ -519,7 +518,7 @@ PolarFlow::readdir(QString path, QStringList &errors)
     // parse JSON payload
     QJsonParseError listExercises_Doc_parseError;
     QJsonDocument listExercises_Doc;
-                  listExercises_Doc = QJsonDocument::fromJson(listExercises_Ary, &listExercises_Doc_parseError);
+    listExercises_Doc = QJsonDocument::fromJson(listExercises_Ary, &listExercises_Doc_parseError);
     printd("readdir - listExercises_Document - Error Number: %d - Error String: %s \n", listExercises_Doc_parseError.error, listExercises_Doc_parseError.errorString().toStdString().c_str());
     //qDebug() << "readdir - listExercises_Document - Url-List to Execerises: " << listExercises_Doc;
 
@@ -584,7 +583,7 @@ PolarFlow::readdir(QString path, QStringList &errors)
         request.setRawHeader("Accept", "application/json");
 
         QNetworkReply *reply = nam->get(request);
-         printd("response : %s\n", url.toStdString().c_str());
+        printd("response : %s\n", url.toStdString().c_str());
 
         // blocking request
         QEventLoop loop;
@@ -606,7 +605,7 @@ PolarFlow::readdir(QString path, QStringList &errors)
         //https://www.polar.com/accesslink-api/?shell#get-exercise-summary
         QJsonParseError get_exercise_summary_Doc_parseError;
         QJsonDocument get_exercise_summary_Doc;
-                      get_exercise_summary_Doc = QJsonDocument::fromJson(get_exercise_summary_Ary, &get_exercise_summary_Doc_parseError);
+        get_exercise_summary_Doc = QJsonDocument::fromJson(get_exercise_summary_Ary, &get_exercise_summary_Doc_parseError);
         //qDebug() << "readdir - loop i:"<< loopCounter << " - get_exercise_summary_Document - Error Number: " << get_exercise_summary_Doc_parseError.error << " - Error String: " << get_exercise_summary_Doc_parseError.errorString();
         //qDebug() << "readdir - loop i:"<< loopCounter << " - get_exercise_summary_Document: " << get_exercise_summary_Doc;
 
@@ -615,8 +614,8 @@ PolarFlow::readdir(QString path, QStringList &errors)
 
         CloudServiceEntry *add = newCloudServiceEntry();
 
-            // each item looks like this:
-            /*
+        // each item looks like this:
+        /*
               {
                 "id": 1937529874,                                       // integer(int64)
                 "upload-time": "2008-10-13T10:40:02Z",                  // string
@@ -723,11 +722,11 @@ PolarFlow::readFile(QByteArray *data, QString remotename, QString remoteid)
     // connect to direct to exercise via remoteid from PolarFlow::readDir
     // https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}
     QString url;
-            url = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4")
-            .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-            .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-            .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
-            .arg(exercise_id_Str);
+    url = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4")
+              .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+              .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+              .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+              .arg(exercise_id_Str);
 
     printd("readFile - url:%s\n", url.toStdString().c_str());
 
@@ -754,7 +753,7 @@ bool
 PolarFlow::writeFile(QByteArray &data, QString remotename, RideFile *ride)
 {
     printd("writeFile - start\n");
-// to do - Polar Flow does not support upload
+    // to do - Polar Flow does not support upload
     return false;
     //return true;
 }
@@ -763,7 +762,7 @@ void
 PolarFlow::writeFileCompleted()
 {
     printd("writeFileCompleted - start \n");
-// to do - Polar Flow does not support upload
+    // to do - Polar Flow does not support upload
 }
 
 void
@@ -852,11 +851,11 @@ PolarFlow::createSampleStream(QJsonDocument &sampletype_Doc, int actualSampleLoo
 
     if (actualSampleLoopNumber < timeSamplesLoopNumber) {
 
-      // Get sample-type ID: represents recorded sample
-      QString sampletype_id_Str = QString::number(sampletype_Doc["sample-type"].toInt());
-      printd("actualSample: %d - sampletype_id_String: %d\n", loopCounterSampleTypes, sampletype_id_Str.toInt());
+        // Get sample-type ID: represents recorded sample
+        QString sampletype_id_Str = QString::number(sampletype_Doc["sample-type"].toInt());
+        printd("actualSample: %d - sampletype_id_String: %d\n", loopCounterSampleTypes, sampletype_id_Str.toInt());
 
-      /*
+        /*
       sample types
       ============
       samples are available in 11 different types.
@@ -881,107 +880,107 @@ PolarFlow::createSampleStream(QJsonDocument &sampletype_Doc, int actualSampleLoo
            training needs to be performed specific heart rate sensor.
       */
 
-      QString samplename_Str;
-      if (sampletype_id_Str == "0" ) {
-          samplename_Str = "heartrate";
-      }
-      if (sampletype_id_Str == "1" ) {
-          samplename_Str =  "speed";
-      }
-      if (sampletype_id_Str == "2" ) {
-          //stype (sport) endsWith SWIMMING or CYCLING
-          samplename_Str = "cadence";
-      }
-      if (sampletype_id_Str == "3") {
-          samplename_Str = "altitude";
-      }
-      if (sampletype_id_Str == "4") {
-          samplename_Str = "power";
-      }
-      if (sampletype_id_Str == "5") {
-          samplename_Str = "powerPedalingIndex";
-      }
-      if (sampletype_id_Str == "6") {
-          samplename_Str = "powerLeftRightBalance";
-      }
-      if (sampletype_id_Str == "7") {
-          samplename_Str =  "airPressure";
-      }
-      if (sampletype_id_Str == "8") {
-          //stype (sport) endsWith RUNNING
-          samplename_Str = "runningCadence";
-      }
-      if (sampletype_id_Str == "9") {
-          samplename_Str = "temperature";
-      }
-      if (sampletype_id_Str == "10") {
-          samplename_Str = "distance";
-      }
-      if (sampletype_id_Str == "11") {
-          samplename_Str = "rrInterval";
-      }
-      printd("actualSampleLoopNumber: %d - Samples %s with id: %s found\n", loopCounterSampleTypes,  samplename_Str.toStdString().c_str(), sampletype_id_Str.toStdString().c_str());
+        QString samplename_Str;
+        if (sampletype_id_Str == "0" ) {
+            samplename_Str = "heartrate";
+        }
+        if (sampletype_id_Str == "1" ) {
+            samplename_Str =  "speed";
+        }
+        if (sampletype_id_Str == "2" ) {
+            //stype (sport) endsWith SWIMMING or CYCLING
+            samplename_Str = "cadence";
+        }
+        if (sampletype_id_Str == "3") {
+            samplename_Str = "altitude";
+        }
+        if (sampletype_id_Str == "4") {
+            samplename_Str = "power";
+        }
+        if (sampletype_id_Str == "5") {
+            samplename_Str = "powerPedalingIndex";
+        }
+        if (sampletype_id_Str == "6") {
+            samplename_Str = "powerLeftRightBalance";
+        }
+        if (sampletype_id_Str == "7") {
+            samplename_Str =  "airPressure";
+        }
+        if (sampletype_id_Str == "8") {
+            //stype (sport) endsWith RUNNING
+            samplename_Str = "runningCadence";
+        }
+        if (sampletype_id_Str == "9") {
+            samplename_Str = "temperature";
+        }
+        if (sampletype_id_Str == "10") {
+            samplename_Str = "distance";
+        }
+        if (sampletype_id_Str == "11") {
+            samplename_Str = "rrInterval";
+        }
+        printd("actualSampleLoopNumber: %d - Samples %s with id: %s found\n", loopCounterSampleTypes,  samplename_Str.toStdString().c_str(), sampletype_id_Str.toStdString().c_str());
 
-      // Get recording-rate: each recording rate one data_value
-      QString recording_rate_Str = QString::number(sampletype_Doc["recording-rate"].toInt());
-      printd("actualSampleLoopNumber: %d - recording_rate_String: %s\n", loopCounterSampleTypes, recording_rate_Str.toStdString().c_str());
+        // Get recording-rate: each recording rate one data_value
+        QString recording_rate_Str = QString::number(sampletype_Doc["recording-rate"].toInt());
+        printd("actualSampleLoopNumber: %d - recording_rate_String: %s\n", loopCounterSampleTypes, recording_rate_Str.toStdString().c_str());
 
-      // create array from list of comma separeted e.g. heart rate values
-      QString datalist_Str = sampletype_Doc["data"].toString();
+        // create array from list of comma separeted e.g. heart rate values
+        QString datalist_Str = sampletype_Doc["data"].toString();
 
-      // create a list of all the data we will work with
-      QStringList datalist_Lst = datalist_Str.split(QLatin1Char(','));
-      printd("actualSampleLoopNumber: %d - datalist_List no of elements: %d\n", loopCounterSampleTypes, datalist_Lst.size());
-      //printd("actualSampleLoopNumber: %d - datalist_String elements: %s\n", loopCounterSampleTypes, datalist_Str.toStdString().c_str());
+        // create a list of all the data we will work with
+        QStringList datalist_Lst = datalist_Str.split(QLatin1Char(','));
+        printd("actualSampleLoopNumber: %d - datalist_List no of elements: %d\n", loopCounterSampleTypes, datalist_Lst.size());
+        //printd("actualSampleLoopNumber: %d - datalist_String elements: %s\n", loopCounterSampleTypes, datalist_Str.toStdString().c_str());
 
-      // create a json array and fill it. Change type from String to float number
-      QJsonArray datalist_Ary;
-                 foreach(QString const& data, datalist_Lst)
-                 datalist_Ary.append(data.toFloat());
-      //qDebug() << "createSampleStream - datalist_Ary:" << datalist_Ary;
+        // create a json array and fill it. Change type from String to float number
+        QJsonArray datalist_Ary;
+        foreach(QString const& data, datalist_Lst)
+            datalist_Ary.append(data.toFloat());
+        //qDebug() << "createSampleStream - datalist_Ary:" << datalist_Ary;
 
-      // save HR Sample size and recording rate for generating suitable timeStream
-     /* if (sampletype_id_Str == "0") {
+        // save HR Sample size and recording rate for generating suitable timeStream
+        /* if (sampletype_id_Str == "0") {
           setSetting(GC_POLARFLOW_SAMPLE_SIZE, datalist_Lst.size());
           setSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, recording_rate_Str.toInt());
       } */
 
-      // save first available Sample size and recording rate for generating suitable timeStream
-      // rrIntervall (sample id 11) could not be used ?!?
-      if (sampletype_id_Str != "11") {
-          if (actualSampleLoopNumber == 0) {
-              setSetting(GC_POLARFLOW_SAMPLE_SIZE, datalist_Lst.size());
-              setSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, recording_rate_Str.toInt());
-              setSetting(GC_POLARFLOW_SAMPLE_ID, sampletype_id_Str);
-              printd("actualSampleLoopNumber: %d\n", loopCounterSampleTypes);
-          }
-      }
-      // rrIntervall (sample id 11)
-      if (sampletype_id_Str == "11") {
-          if (actualSampleLoopNumber == 0) {
-             setSetting(GC_POLARFLOW_SAMPLE_SIZE, datalist_Lst.size());
-             setSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, 1);
-             printd("actualSampleLoopNumber: %d\n", loopCounterSampleTypes);
-          }
-      }
-      printd("saved Sample Size: %d\n", getSetting(GC_POLARFLOW_SAMPLE_SIZE, "").toInt());
-      printd("saved Sample Size Recording Rate: %d\n", getSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, "").toInt());
-      printd("saved from Sample id: %d\n", getSetting(GC_POLARFLOW_SAMPLE_ID, "").toInt());
+        // save first available Sample size and recording rate for generating suitable timeStream
+        // rrIntervall (sample id 11) could not be used ?!?
+        if (sampletype_id_Str != "11") {
+            if (actualSampleLoopNumber == 0) {
+                setSetting(GC_POLARFLOW_SAMPLE_SIZE, datalist_Lst.size());
+                setSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, recording_rate_Str.toInt());
+                setSetting(GC_POLARFLOW_SAMPLE_ID, sampletype_id_Str);
+                printd("actualSampleLoopNumber: %d\n", loopCounterSampleTypes);
+            }
+        }
+        // rrIntervall (sample id 11)
+        if (sampletype_id_Str == "11") {
+            if (actualSampleLoopNumber == 0) {
+                setSetting(GC_POLARFLOW_SAMPLE_SIZE, datalist_Lst.size());
+                setSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, 1);
+                printd("actualSampleLoopNumber: %d\n", loopCounterSampleTypes);
+            }
+        }
+        printd("saved Sample Size: %d\n", getSetting(GC_POLARFLOW_SAMPLE_SIZE, "").toInt());
+        printd("saved Sample Size Recording Rate: %d\n", getSetting(GC_POLARFLOW_SAMPLE_RECORDINGRATE, "").toInt());
+        printd("saved from Sample id: %d\n", getSetting(GC_POLARFLOW_SAMPLE_ID, "").toInt());
 
-      // Build a new Array like Strava Stream to use Syntax
-      // https://www.programmerall.com/article/31271073246/
-      QJsonDocument sampleStream_Doc;
-      QJsonObject sampleStream_Obj;
-           sampleStream_Obj.insert("type", samplename_Str);
-           sampleStream_Obj.insert("data", datalist_Ary);
-           sampleStream_Obj.insert("series_type", sampletype_id_Str.toInt());
-           sampleStream_Obj.insert("original_size", datalist_Lst.size());
-           sampleStream_Obj.insert("recording_rate", recording_rate_Str.toInt());
+        // Build a new Array like Strava Stream to use Syntax
+        // https://www.programmerall.com/article/31271073246/
+        QJsonDocument sampleStream_Doc;
+        QJsonObject sampleStream_Obj;
+        sampleStream_Obj.insert("type", samplename_Str);
+        sampleStream_Obj.insert("data", datalist_Ary);
+        sampleStream_Obj.insert("series_type", sampletype_id_Str.toInt());
+        sampleStream_Obj.insert("original_size", datalist_Lst.size());
+        sampleStream_Obj.insert("recording_rate", recording_rate_Str.toInt());
 
-      //qDebug() << "createSampleStream - stream_Object:" << sampleStream_Obj;
-      //return sampleStream_Obj;
-      stream_Obj = sampleStream_Obj;
-      clearJsonObject(sampleStream_Obj);
+        //qDebug() << "createSampleStream - stream_Object:" << sampleStream_Obj;
+        //return sampleStream_Obj;
+        stream_Obj = sampleStream_Obj;
+        clearJsonObject(sampleStream_Obj);
 
     } // close if loopnumber < timestream
 
@@ -1007,7 +1006,7 @@ PolarFlow::createSampleStream(QJsonDocument &sampletype_Doc, int actualSampleLoo
         //float recording_rate = (float)recordingRate;
 
         QList<float> timeSampleData_Lst;
-                     //timeSampleData_Lst.append(0.0); // first member is zero
+            //timeSampleData_Lst.append(0.0); // first member is zero
         //for(int i=0; i<loops; i++) {
         for(int i=0; i<timeSampleSize; i++) {
             float localLoopNumber = (float)i;
@@ -1019,19 +1018,19 @@ PolarFlow::createSampleStream(QJsonDocument &sampletype_Doc, int actualSampleLoo
         //qDebug() << "createSampleStream - timeSampleData_List:" << timeSampleData_Lst;
 
         QJsonArray timeData_Ary;
-                   //foreach(QList<int> data, timeSampleData_Lst)
-                   for(int i=0; i<timeSampleData_Lst.size(); i++) {
-                   timeData_Ary.append(timeSampleData_Lst.at(i));
-                   }
+        //foreach(QList<int> data, timeSampleData_Lst)
+        for(int i=0; i<timeSampleData_Lst.size(); i++) {
+            timeData_Ary.append(timeSampleData_Lst.at(i));
+        }
         printd("actualSampleLoopNumber: %d - time_Array no of elements: %d \n", loopCounterSampleTypes,  timeData_Ary.size());
         //qDebug() << "createSampleStream - time_Array:" << timeData_Ary;
 
         QJsonObject timeStream_Obj;
-                    timeStream_Obj.insert("type", "time");
-                    timeStream_Obj.insert("data", timeData_Ary);
-                    timeStream_Obj.insert("series_type", "");
-                    timeStream_Obj.insert("original_size", timeData_Ary.size());
-                    timeStream_Obj.insert("recording_rate", recordingRate);
+        timeStream_Obj.insert("type", "time");
+        timeStream_Obj.insert("data", timeData_Ary);
+        timeStream_Obj.insert("series_type", "");
+        timeStream_Obj.insert("original_size", timeData_Ary.size());
+        timeStream_Obj.insert("recording_rate", recordingRate);
 
         //qDebug() << "createSampleStream - time_Object:" << timeStream_Obj;
         //return timeStream_Obj;
@@ -1062,16 +1061,16 @@ PolarFlow::addSamples(RideFile* ret, QString exerciseId)
 
     // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/samples
     QString getAvailableSampleTypesUrls_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/samples")
-               .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-               .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-               .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
-               .arg(exerciseId);
+                                                  .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                                                  .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                                                  .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                                                  .arg(exerciseId);
     printd("URL-List Sample Types: %s\n", getAvailableSampleTypesUrls_Str.toStdString().c_str());
 
     // request using the bearer token
     QNetworkRequest request(getAvailableSampleTypesUrls_Str);
-                    request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
-                    request.setRawHeader("Accept", "application/json");
+    request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+    request.setRawHeader("Accept", "application/json");
 
     // make request
     QNetworkReply *reply = nam->get(request);
@@ -1154,8 +1153,8 @@ PolarFlow::addSamples(RideFile* ret, QString exerciseId)
 
             // request using the bearer token
             QNetworkRequest request(sampleUrl_Str);
-                            request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
-                            request.setRawHeader("Accept", "application/json");
+            request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+            request.setRawHeader("Accept", "application/json");
 
             // make request
             QNetworkReply *reply = nam->get(request);
@@ -1179,7 +1178,7 @@ PolarFlow::addSamples(RideFile* ret, QString exerciseId)
             // parse JSON payload
             QJsonParseError sampletype_Doc_parseError;
             QJsonDocument sampletype_Doc;
-                           sampletype_Doc = QJsonDocument::fromJson(sampletype_Ary, &sampletype_Doc_parseError);
+            sampletype_Doc = QJsonDocument::fromJson(sampletype_Ary, &sampletype_Doc_parseError);
             //qDebug() << "addSamples - loop actualSampleLoopNumber:"<< loopCounterSampleTypes <<"/"<< numberOfAvailableSampleTyps << " - sampletype_Document - Error Number:" << sampletype_Doc_parseError.error << " - sampletype_Document - Error String: " << sampletype_Doc_parseError.errorString();
             //qDebug() << "addSamples - loop actualSampleLoopNumber:"<< loopCounterSampleTypes <<"/"<< numberOfAvailableSampleTyps << " - sampletype_Document:" << sampletype_Doc;
             //printd("sampletype_Doc: %s \n", sampletype_Doc.toJson().toStdString().c_str());
@@ -1225,27 +1224,27 @@ PolarFlow::addSamples(RideFile* ret, QString exerciseId)
         // to the series names we use in GC
         //printd("creating static struct for available RideFile seriestyps\n");
         static struct {
-               RideFile::seriestype type;
-               const char *polarsampletypename; // polarsampletypename
-               double factor; // to convert from PolarFlow units to GC units
+            RideFile::seriestype type;
+            const char *polarsampletypename; // polarsampletypename
+            double factor; // to convert from PolarFlow units to GC units
         }
         seriesnames[] = {
-               // seriestype,         polarsampletypename,     conversion factor -> RideFile.h/.cpp Line 350ff
-               { RideFile::secs,      "time",                  1.0f   }, // s (not provided by polar, needs to be created seperatly)
-               { RideFile::hr,        "heartrate",             1.0f   }, // bpm
-               { RideFile::kph,       "speed",                 1.0f   }, // km/h
-               { RideFile::cad,       "cadence",               1.0f   }, // rpm
-               { RideFile::alt,       "altitude",              1.0f   }, // m
-               { RideFile::watts,     "power",                 1.0f   }, // W
-               //{ RideFile::none,      "powerPedalingIndex",    0.0f   }, // %
-               { RideFile::lrbalance, "powerLeftRightBalance", 1.0f   }, // %
-               //{ RideFile::none,      "airPressure",           0.0f   }, // hpa
-               { RideFile::rcad,       "runningCadence",       1.0f   }, // spm // conversation factor "2" same Value as Strava
-               { RideFile::temp,       "temperature",          1.0f   }, // °C
-               { RideFile::km,         "distance",             0.001f }, // m
-               //{ RideFile::none,       "rrInterval",           0.001f }, // ms
-               { RideFile::none,       "",                     0.0f   } // must be last in list, stop condition for loop
-        };
+                // seriestype,         polarsampletypename,     conversion factor -> RideFile.h/.cpp Line 350ff
+                { RideFile::secs,      "time",                  1.0f   }, // s (not provided by polar, needs to be created seperatly)
+                { RideFile::hr,        "heartrate",             1.0f   }, // bpm
+                { RideFile::kph,       "speed",                 1.0f   }, // km/h
+                { RideFile::cad,       "cadence",               1.0f   }, // rpm
+                { RideFile::alt,       "altitude",              1.0f   }, // m
+                { RideFile::watts,     "power",                 1.0f   }, // W
+                //{ RideFile::none,      "powerPedalingIndex",    0.0f   }, // %
+                { RideFile::lrbalance, "powerLeftRightBalance", 1.0f   }, // %
+                //{ RideFile::none,      "airPressure",           0.0f   }, // hpa
+                { RideFile::rcad,       "runningCadence",       1.0f   }, // spm // conversation factor "2" same Value as Strava
+                { RideFile::temp,       "temperature",          1.0f   }, // °C
+                { RideFile::km,         "distance",             0.001f }, // m
+                //{ RideFile::none,       "rrInterval",           0.001f }, // ms
+                { RideFile::none,       "",                     0.0f   } // must be last in list, stop condition for loop
+            };
 
         // data to combine with ride
         // define QList<polarSamples_Class> syntax
@@ -1294,7 +1293,7 @@ PolarFlow::addSamples(RideFile* ret, QString exerciseId)
                 }
                 // close running through series if type name
             } // close for seriesLoop
-        printd("combining samples  ended\n\n");
+            printd("combining samples  ended\n\n");
 
         }
         // close if loop fillQListsLoop
@@ -1327,7 +1326,7 @@ PolarFlow::addSamples(RideFile* ret, QString exerciseId)
                     end = true;
                 }
                 // close else
-            }
+                }
             // close foreach
 
             //printd("adding element to Ridefile:Series - loop %d\n", index); //%s", polarSampleClassData_QLst.samples.at(index));
@@ -1349,7 +1348,7 @@ void
 PolarFlow::fixLapSwim(RideFile* ret, QJsonArray laps)
 {
     printd("fixLapSwim - start \n");
-/*
+    /*
     // Lap Swim & SmartRecording enabled: use distance from laps to fix samples
     if (ret->isSwim() && ret->isDataPresent(RideFile::km) && !ret->isDataPresent(RideFile::lat)) {
 
@@ -1417,7 +1416,7 @@ PolarFlow::fixSmartRecording(RideFile* ret)
     QVariant isGarminSmartRecording = appsettings->value(NULL, GC_GARMIN_SMARTRECORD,Qt::Checked);
     // do nothing if disabled
     if (isGarminSmartRecording.toInt() == 0) return;
-        //qDebug() << "fixSmartRecording - isGarminSmartRecording" << isGarminSmartRecording;
+    //qDebug() << "fixSmartRecording - isGarminSmartRecording" << isGarminSmartRecording;
 
 
     QVariant GarminHWM = appsettings->value(NULL, GC_GARMIN_HWMARK);
@@ -1449,7 +1448,7 @@ PolarFlow::fixSmartRecording(RideFile* ret)
 
             // if we have gps and we moved, then this isn't a stop
             bool stationary = ((last->lat || last->lon) && (point->lat || point->lon)) // gps is present
-                         && last->lat == point->lat && last->lon == point->lon;
+                              && last->lat == point->lat && last->lon == point->lon;
 
             // moved for less than GarminHWM seconds ... interpolate
             if (!stationary && gap >= 1 && gap <= GarminHWM.toInt()) {
@@ -1550,19 +1549,19 @@ PolarFlow::saveFile(QByteArray &array, QString exerciseId, QString filetype, QDa
 
 
     QString starttime_format;
-            starttime_format = "yyyy_MM_dd_HH_mm_ss";
+    starttime_format = "yyyy_MM_dd_HH_mm_ss";
     QString starttime_str;
-            starttime_str = starttime.toString(starttime_format);
+    starttime_str = starttime.toString(starttime_format);
 
     QString filename;
-            filename = context->athlete->home->tmpActivities().canonicalPath() + "/" + starttime_str + "_" + detailedSportInfo_Str + "_"+ exerciseId  + "." + filetype;
+    filename = context->athlete->home->tmpActivities().canonicalPath() + "/" + starttime_str + "_" + detailedSportInfo_Str + "_"+ exerciseId  + "." + filetype;
     printd("filename - %s \n", filename.toStdString().c_str());
 
     //https://stackoverflow.com/questions/12988131/qt4-write-qbytearray-to-file-with-filename
     QSaveFile tempFile(filename);
-              tempFile.open(QIODevice::WriteOnly);
-              tempFile.write(array);
-              tempFile.commit();
+    tempFile.open(QIODevice::WriteOnly);
+    tempFile.write(array);
+    tempFile.commit();
 
     printd("returnd filename %s \n", filename.toStdString().c_str());
     printd("end \n");
@@ -1593,27 +1592,27 @@ PolarFlow::getFile(QString exerciseId, QString filetype, QDateTime starttime, QS
     QString transaction_id_Str = getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString();
     printd("transaction_id_String: %s \n", transaction_id_Str.toStdString().c_str());
 
- // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/gpx
- // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/tcx
- // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/fit
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/gpx
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/tcx
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/fit
 
     QString filename;
 
- // first filetype GPX
+    // first filetype GPX
     if (filetype == "gpx") {
 
         QString get_GPX_Str;
-                get_GPX_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/gpx")
-                   .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-                   .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-                   .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
-                   .arg(exerciseId);
+        get_GPX_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/gpx")
+                          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                          .arg(exerciseId);
         printd("GPX - URL: %s \n", get_GPX_Str.toStdString().c_str());
 
         // request using the bearer token, application/gpx+xml
         QNetworkRequest requestGPX(get_GPX_Str);
-                        requestGPX.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
-                        requestGPX.setRawHeader("Accept", "application/gpx+xml");
+        requestGPX.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+        requestGPX.setRawHeader("Accept", "application/gpx+xml");
 
         // make request
         QNetworkReply *replyGPX = nam->get(requestGPX);
@@ -1637,27 +1636,27 @@ PolarFlow::getFile(QString exerciseId, QString filetype, QDateTime starttime, QS
 
         if (statusCodeGPX == dataAvailable) {
             QString filenameGPX;
-                    filenameGPX = saveFile(get_GPX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+            filenameGPX = saveFile(get_GPX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
             printd("GPX - filename: %s \n", filenameGPX.toStdString().c_str());
             printd("GPX end \n");
             filename = filenameGPX;
         } else filename = "noContent";
     } // close filetype gpx
 
- // second file TCX
+    // second file TCX
     if (filetype == "tcx") {
         QString get_TCX_Str;
-                get_TCX_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/tcx")
-                   .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-                   .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-                   .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
-                   .arg(exerciseId);
+        get_TCX_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/tcx")
+                          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                          .arg(exerciseId);
         printd("TCX - URL: %s \n", get_TCX_Str.toStdString().c_str());
 
         // request using the bearer token, application/vnd.garmin.tcx+xml
         QNetworkRequest requestTCX(get_TCX_Str);
-                        requestTCX.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
-                        requestTCX.setRawHeader("Accept", "application/vnd.garmin.tcx+xml");
+        requestTCX.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+        requestTCX.setRawHeader("Accept", "application/vnd.garmin.tcx+xml");
 
         // make request
         QNetworkReply *replyTCX = nam->get(requestTCX);
@@ -1678,9 +1677,9 @@ PolarFlow::getFile(QString exerciseId, QString filetype, QDateTime starttime, QS
         QByteArray get_TCX_Ary = replyTCX->readAll();
         //printd("page : %s\n", get_TCX_Ary.toStdString().c_str());
 
-       if (statusCodeTCX == dataAvailable) {
+        if (statusCodeTCX == dataAvailable) {
             QString filenameTCX;
-                    filenameTCX = saveFile(get_TCX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+            filenameTCX = saveFile(get_TCX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
 
             printd("TCX - filename: %s \n", filenameTCX.toStdString().c_str());
             printd("TCX - end \n");
@@ -1688,20 +1687,20 @@ PolarFlow::getFile(QString exerciseId, QString filetype, QDateTime starttime, QS
         } else filename = "noContent";
     } // close filetype tcx
 
- // third file FIT Beta
+    // third file FIT Beta
     if (filetype == "fit") {
         QString get_FIT_Str;
-                get_FIT_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/fit")
-                   .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
-                   .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
-                   .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
-                   .arg(exerciseId);
+        get_FIT_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/fit")
+                          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                          .arg(exerciseId);
         printd("FIT Beta - URL-List Samples: %s \n", get_FIT_Str.toStdString().c_str());
 
         // request using the bearer token, */*
         QNetworkRequest requestFIT(get_FIT_Str);
-                        requestFIT.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
-                        requestFIT.setRawHeader("Accept", "*/*");
+        requestFIT.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+        requestFIT.setRawHeader("Accept", "*/*");
 
         // make request
         QNetworkReply *replyFIT = nam->get(requestFIT);
@@ -1723,7 +1722,7 @@ PolarFlow::getFile(QString exerciseId, QString filetype, QDateTime starttime, QS
 
         if (statusCodeFIT == dataAvailable) {
             QString filenameFIT;
-                    filenameFIT = saveFile(get_FIT_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+            filenameFIT = saveFile(get_FIT_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
 
             printd("FIT Beta - filename: %s \n", filenameFIT.toStdString().c_str());
             printd("FIT Beta - close \n");
@@ -1785,7 +1784,7 @@ PolarFlow::addExerciseSummaryInformation(RideFile* ret, QJsonObject &object)
 
     // Get upload-time
     QDateTime uploadtime = QDateTime::fromString(object["upload-time"].toString(), Qt::ISODate);
-       //rideImport->setTag("Upload Time", uploadtime);
+        //rideImport->setTag("Upload Time", uploadtime);
 
     // Get device
     if (object["device"].toString().length()>0)
@@ -1834,7 +1833,7 @@ PolarFlow::addExerciseSummaryInformation(RideFile* ret, QJsonObject &object)
         QMap<QString,QString> map;
         map.insert("value", QString("%1").arg(object["distance"].toDouble()/1000.0));
         ret->metricOverrides.insert("total_distance", map);
-     }
+    }
 
     // Get heart-rate average and maximum
     if (!object["heart-rate"].isNull()) {
@@ -1850,7 +1849,7 @@ PolarFlow::addExerciseSummaryInformation(RideFile* ret, QJsonObject &object)
             //qDebug() << "averageHr_Val:" << averageHr_Val;
             //qDebug() << "averageHr:" << averageHr;
             QMap<QString,QString> map;
-                                  map.insert("value", averageHr);
+            map.insert("value", averageHr);
             //qDebug() << "mapHr:" << map;
             ret->metricOverrides.insert("Average Heart Rate", map);
         }
@@ -1858,7 +1857,7 @@ PolarFlow::addExerciseSummaryInformation(RideFile* ret, QJsonObject &object)
             QJsonValue maximumHr_Val = heartrate_Obj.value("maximum");
             QString maximumHr = QString::number(maximumHr_Val.toInt());
             QMap<QString,QString> map;
-                                  map.insert("value", maximumHr);
+            map.insert("value", maximumHr);
             ret->metricOverrides.insert("Maximum Heart Rate", map);
         }
     }
@@ -1868,7 +1867,7 @@ PolarFlow::addExerciseSummaryInformation(RideFile* ret, QJsonObject &object)
         QJsonValue trainingLoad_Val = object.value("training-load");
         QString trainingLoad_Str = QString::number(trainingLoad_Val.toDouble());
         ret->setTag("Polar Training Load", trainingLoad_Str);
-     }
+    }
 
     // Get sport - main
     if (!object["sport"].isNull()) {
@@ -2165,8 +2164,8 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
 
     // how will the exercise be acquired? via "File"-Import or via "Streams"
     QString typeOfImporting; // "File|Samples"
-            typeOfImporting = POLARFLOW_IMPORTTYPE;
-            //typeOfImporting = "File";
+    typeOfImporting = POLARFLOW_IMPORTTYPE;
+    //typeOfImporting = "File";
     //printd("PolarFlow::prepareResponse: %s \n", originalName);
 
     QJsonParseError parseError;
@@ -2266,61 +2265,61 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
 
         // Import Excercise via File-Import
         if (typeOfImporting == "File") {
-        //Which type will be imported? "TCX" or "FIT"
-        // set file name for import in GC - use TCX - Format because notes are included
-        QString filenameForImport; // file for importing
+            //Which type will be imported? "TCX" or "FIT"
+            // set file name for import in GC - use TCX - Format because notes are included
+            QString filenameForImport; // file for importing
 
-        QString filetypeForImport;
-                filetypeForImport = POLARFLOW_IMPORTFILEFORMAT;
-                //filetypeForImport = "TCX";
+            QString filetypeForImport;
+            filetypeForImport = POLARFLOW_IMPORTFILEFORMAT;
+            //filetypeForImport = "TCX";
 
-        if (filetypeForImport == "TCX") {
-            filenameForImport = filenameWithPathTCX;
-        }
-        if (filetypeForImport == "GPX") {
-            filenameForImport = filenameWithPathGPX;
-        }
-        if (filetypeForImport == "FIT") {
-            filenameForImport = filenameWithPathFITBeta;
-        }
+            if (filetypeForImport == "TCX") {
+                filenameForImport = filenameWithPathTCX;
+            }
+            if (filetypeForImport == "GPX") {
+                filenameForImport = filenameWithPathGPX;
+            }
+            if (filetypeForImport == "FIT") {
+                filenameForImport = filenameWithPathFITBeta;
+            }
 
-        // we need the full Path for importing downloaded file
-        QString filenameWithPathSuffix = QFileInfo(filenameForImport).suffix();
-        printd("prepareResponse - filename with Path Suffix: %s \n", filenameWithPathSuffix.toStdString().c_str());
+            // we need the full Path for importing downloaded file
+            QString filenameWithPathSuffix = QFileInfo(filenameForImport).suffix();
+            printd("prepareResponse - filename with Path Suffix: %s \n", filenameWithPathSuffix.toStdString().c_str());
 
-        QFile importfile(filenameForImport);
-        printd("prepareResponse - filename with Path: %s \n", filenameForImport.toStdString().c_str());
+            QFile importfile(filenameForImport);
+            printd("prepareResponse - filename with Path: %s \n", filenameForImport.toStdString().c_str());
 
-        QFileInfo filenameWithPathComplete(filenameForImport);
-        QString filename = filenameWithPathComplete.fileName();
-        printd("prepareResponse - filename: %s \n", filename.toStdString().c_str());
+            QFileInfo filenameWithPathComplete(filenameForImport);
+            QString filename = filenameWithPathComplete.fileName();
+            printd("prepareResponse - filename: %s \n", filename.toStdString().c_str());
 
-        // Import downloaded file and set some extra data from exercise summary to RideFile: rideImport
-        RideFile *rideImport = RideFileFactory::instance().openRideFile(context, importfile, errorsImport);
-        //qDebug() << "prepareResponse - uncompressRide - errors:" << errorsImport;
+            // Import downloaded file and set some extra data from exercise summary to RideFile: rideImport
+            RideFile *rideImport = RideFileFactory::instance().openRideFile(context, importfile, errorsImport);
+            //qDebug() << "prepareResponse - uncompressRide - errors:" << errorsImport;
 
-        // minimal information added to imported file, so we can see where we got the information from
-        // Set Source Filename
-        if (filename.length()>0) {
-            rideImport->setTag("Source Filename", filename);
-        }
+            // minimal information added to imported file, so we can see where we got the information from
+            // Set Source Filename
+            if (filename.length()>0) {
+                rideImport->setTag("Source Filename", filename);
+            }
 
-        // set polar exercise id in metadata (to show where we got it from - to add View on Polar link in Summary view
-        if (!get_exercise_summary_Obj["id"].isNull()) {
-            rideImport->setTag("Polar Exercise ID",  exercise_id_Str);
-        }
+            // set polar exercise id in metadata (to show where we got it from - to add View on Polar link in Summary view
+            if (!get_exercise_summary_Obj["id"].isNull()) {
+                rideImport->setTag("Polar Exercise ID",  exercise_id_Str);
+            }
 
-        // add the rest of available excercise informations
-        addExerciseSummaryInformation(rideImport, get_exercise_summary_Obj);
+            // add the rest of available excercise informations
+            addExerciseSummaryInformation(rideImport, get_exercise_summary_Obj);
 
-        //printd("prepareResponse - fixSmartRecording: %s \n", rideImport);
-        fixSmartRecording(rideImport);
-        JsonFileReader rideImportReader;
-        data->clear();
-        //What is included? (Context *context, const RideFile *ride, bool withAlt, bool withWatts, bool withHr, bool withCad)
-        data->append(rideImportReader.toByteArray(context, rideImport, true, true, true, true));
-        // temp ride not needed anymore
-        delete rideImport;
+            //printd("prepareResponse - fixSmartRecording: %s \n", rideImport);
+            fixSmartRecording(rideImport);
+            JsonFileReader rideImportReader;
+            data->clear();
+            //What is included? (Context *context, const RideFile *ride, bool withAlt, bool withWatts, bool withHr, bool withCad)
+            data->append(rideImportReader.toByteArray(context, rideImport, true, true, true, true));
+            // temp ride not needed anymore
+            delete rideImport;
         }
 
         // Acquire Excercise via Stream-Import
@@ -2410,7 +2409,7 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
             commit(emptyerrorlist);
         }
 
-     }
+    }
     // at last return aquired data
     return data;
 }
