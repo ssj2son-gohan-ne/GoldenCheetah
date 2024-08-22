@@ -16,35 +16,34 @@
  * Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef GC_PolarFlow_h
-#define GC_PolarFlow_h
+#ifndef GC_PolarFlowByTransaction_h
+#define GC_PolarFlowByTransaction_h
 
 #include "CloudService.h"
+#include "PolarFlow.h"
 #include <QNetworkAccessManager>
 #include <QNetworkRequest>
 #include <QImage>
 
 // OAuth domain (requires client id)
-#define GC_POLARFLOW_OAUTH_URL "https://flow.polar.com/oauth2/authorization"
+//#define GC_POLARFLOW_OAUTH_URL "https://flow.polar.com/oauth2/authorization"
 
 // Access token (requires client id and secret)
-#define GC_POLARFLOW_TOKEN_URL "https://polarremote.com/v2/oauth2/token"
+//#define GC_POLARFLOW_TOKEN_URL "https://polarremote.com/v2/oauth2/token"
 
 // Request URL (requires access token)
-#define GC_POLARFLOW_URL "https://www.polaraccesslink.com"
+//#define GC_POLARFLOW_URL "https://www.polaraccesslink.com"
 
-class PolarFlow : public CloudService {
-
+class PolarFlowBT : public PolarFlow {
     Q_OBJECT
 
 public:
+    PolarFlowBT(Context *context);
+    CloudService *clone(Context *context) { return new PolarFlowBT(context); }
+    ~PolarFlowBT();
 
-    PolarFlow(Context *context);
-    CloudService *clone(Context *context) { return new PolarFlow(context); }
-    ~PolarFlow();
-
-    QString id() const { return "PolarFlow"; }
-    QString uiName() const { return tr("Polar Flow"); }
+    QString id() const { return "Polar Flow BT"; }
+    QString uiName() const { return tr("Polar Flow By Transaction"); }
     QString description() const { return (tr("Download from the popular Polar website.")); }
     QImage logo() const { return QImage(":images/services/polarflow.png"); }
 
@@ -59,45 +58,28 @@ public:
     // polar capabilities of service - NOT Default
     virtual int capabilities() const { return OAuth | Download | Query; }
 
-    QString authiconpath() const { return QString(":images/services/polarflow.png"); }
-
     // read a file
     bool readFile(QByteArray *data, QString remotename, QString remoteid); //
 
     // write a file
-    bool writeFile(QByteArray &data, QString remotename, RideFile *ride); //
+    //bool writeFile(QByteArray &data, QString remotename, RideFile *ride); //
 
-    static int isoDateToSeconds(QString &string); // get a duration out of ISO-Date Format
-    //QJsonObject createSampleStream(QJsonDocument &document, int loopnumber); // Create "Strava"-like Streams from Polar Samples
-    QJsonObject createSampleStream(QJsonDocument &sampletype_Doc, int actualSampleLoopNumber, int timeSamplesLoopNumber); // Create "Strava"-like Streams from Polar Samples
-
-    static void clearJsonObject(QJsonObject &object); // clear old Stream
-    //void addSamples(RideFile* ret, QString exerciseId, QString fileSuffix); // Get available samples and Get Samples
     void addSamples(RideFile* ret, QString exerciseId); // Get available samples and Get Samples
 
-    static void fixLapSwim(RideFile* ret, QJsonArray laps);
-    static void fixSmartRecording(RideFile* ret);
-
-    QString saveFile(QByteArray &array, QString exerciseId, QString filetype, QDateTime starttime, QString detailedSportInfo_Str); // Save Data File
     QString getFile(QString exerciseId, QString filetype, QDateTime starttime, QString detailedSportInfo_Str); // Get Data File
-
-    void ImportFiles(QJsonObject &object, QString exerciseId);
-
-    static void addExerciseSummaryInformation(RideFile* ret, QJsonObject &object); //, int duration_time);
 
     // populate exercise list
     QList<CloudServiceEntry*> readdir(QString path, QStringList &errors); // CloudService.h 171 -> not implemented
     //QList<CloudServiceEntry*> readdir(QString path, QStringList &errors, QDateTime from, QDateTime to);
 
-    //static Context *context;
-
 public slots:
+
     // getting data
     void readyRead(); //
     void readFileCompleted(); //
 
     // sending data - NOT for now
-    void writeFileCompleted(); //
+    //void writeFileCompleted(); //
 
 private:
     Context *context;
