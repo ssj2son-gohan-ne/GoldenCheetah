@@ -44,8 +44,6 @@
 #include "mvjson.h"
 #include "Units.h"
 #include "RideImportWizard.h"
-//#include "MergeActivityWizard.h"
-//#include "MainWindow.h"
 #include <QByteArray>
 #include <QHttpMultiPart>
 #include <QJsonDocument>
@@ -96,7 +94,7 @@ do {                                                                \
 #define POLARFLOW_COMMITTRANSACTIONOVERRIDE "false"
 #endif
 
-PolarFlow::PolarFlow(Context *context) : CloudService(context), context(context) {
+PolarFlow30D::PolarFlow30D(Context *context) : PolarFlow(context), context(context) {
 
     if (context) {
         nam = new QNetworkAccessManager(this);
@@ -121,15 +119,20 @@ PolarFlow::PolarFlow(Context *context) : CloudService(context), context(context)
     //settings.insert(Metadata1, QString("%1::Activity Name").arg(GC_POLARFLOW_ACTIVITY_NAME));
 }
 
-PolarFlow::~PolarFlow() {
+PolarFlow30D::~PolarFlow30D() {
     if (context) delete nam;
 }
 
+void
+PolarFlow30D::onSslErrors(QNetworkReply *reply, const QList<QSslError>&)
+{
+    reply->ignoreSslErrors();
+}
+
 bool
-PolarFlow::open(QStringList &errors) //open transaction
+PolarFlow30D::open(QStringList &errors) //open transaction
 {
     printd("open - start\n");
-    printd("PolarFlow::open\n");
     // do we have a token
     QString token = getSetting(GC_POLARFLOW_TOKEN, "").toString();
     if (token == "") {
@@ -139,14 +142,22 @@ PolarFlow::open(QStringList &errors) //open transaction
     return true;
 }
 
+bool
+PolarFlow30D::close()
+{
+    printd("End\n");
+    // nothing to do for now
+    return true;
+}
+
 QList<CloudServiceEntry*>
-PolarFlow::readdir(QString path, QStringList &errors)
-//PolarFlow::readdir(QString path, QStringList &errors, QDateTime from, QDateTime to)
+PolarFlow30D::readdir(QString path, QStringList &errors)
+//PolarFlow30D::readdir(QString path, QStringList &errors, QDateTime from, QDateTime to)
 {
     // use transactionID getting a list of exercises
     // https://www.polar.com/accesslink-api/?shell#list-exercises
 
-    printd("PolarFlow::readdir - start (%s)\n", path.toStdString().c_str());
+    printd("start (%s)\n", path.toStdString().c_str());
 
     QList<CloudServiceEntry*> returning;
 
@@ -368,7 +379,7 @@ PolarFlow::readdir(QString path, QStringList &errors)
 
         //Convert frome ISO to Seconds
         QString duration_str = get_exercise_summary_Obj["duration"].toString(); // "PT4H51M38.512S"
-        int duration_time = isoDateToSeconds(duration_str);
+        int duration_time = PolarFlow::isoDateToSeconds(duration_str);
         printd("prepareResponse - Duration Int: %d \n", duration_time);
 
         add->label = QFileInfo(get_exercise_summary_Obj["detailed-sport-info"].toString()).fileName();
@@ -408,13 +419,13 @@ PolarFlow::readdir(QString path, QStringList &errors)
 }
 
 bool
-PolarFlow::readFile(QByteArray *data, QString remotename, QString remoteid)
+PolarFlow30D::readFile(QByteArray *data, QString remotename, QString remoteid)
 {
-    printd("readFile - start\n");
+    printd("start\n");
     // create alias
     QString exercise_id_Str = remoteid;
-    printd("PolarFlow::readFile remotename: %s - remoteid: %s \n", remotename.toStdString().c_str(), exercise_id_Str.toStdString().c_str());
-    printd("readFile - exercise_id_String alias: %s\n", exercise_id_Str.toStdString().c_str());
+    printd("remotename: %s - remoteid: %s \n", remotename.toStdString().c_str(), exercise_id_Str.toStdString().c_str());
+    printd("exercise_id_String alias: %s\n", exercise_id_Str.toStdString().c_str());
 
     // do we have a token ?
     QString token = getSetting(GC_POLARFLOW_TOKEN, "").toString();
@@ -454,8 +465,511 @@ PolarFlow::readFile(QByteArray *data, QString remotename, QString remoteid)
     return true;
 }
 
+void
+PolarFlow30D::readyRead()
+{
+    printd("start\n");
+    QNetworkReply *reply = static_cast<QNetworkReply*>(QObject::sender());
+    buffers.value(reply)->append(reply->readAll());
+    //qDebug() << "readyRead - reply: " << reply;
+    printd("end\n\n");
+}
+
+void
+PolarFlow30D::readFileCompleted()
+{
+    printd("start\n");
+
+    QNetworkReply *reply = static_cast<QNetworkReply*>(QObject::sender());
+    //qDebug() << "readFileCompleted - reply:" << reply;
+
+    printd("reply:%s\n", buffers.value(reply)->toStdString().c_str());
+
+    QString rename = replyName(reply);
+    QByteArray* data = prepareResponse(buffers.value(reply), rename);
+    //qDebug() << "readFileCompleted - data:" << data;
+
+    notifyReadComplete(data, replyName(reply), tr("Completed."));
+
+    printd("end\n\n");
+
+}
+
+void
+PolarFlow30D::addSamples(RideFile* ret, QString exerciseId)
+{
+    printd("start\n");
+    // Get infos from requsted JSON
+    // https://www.polar.com/accesslink-api/?shell#get-exercise-summary
+    // https://www.polar.com/accesslink-api/?shell#get-available-samples
+    // https://www.polar.com/accesslink-api/?shell#get-samples
+    // https://www.polar.com/accesslink-api/?shell#exercise-sample-types
+    //printd("addSamples\n");
+
+    QString token = getSetting(GC_POLARFLOW_TOKEN, "").toString();
+
+    QString transaction_id_Str = getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString();
+    //printd("transaction_id_String: %s\n", transaction_id_Str.toStdString().c_str());
+
+    //printd("fileSuffix: %s\n", fileSuffix.toStdString().c_str());
+
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/samples
+    QString getAvailableSampleTypesUrls_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/samples")
+                                                  .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                                                  .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                                                  .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                                                  .arg(exerciseId);
+    printd("URL-List Sample Types: %s\n", getAvailableSampleTypesUrls_Str.toStdString().c_str());
+
+    // request using the bearer token
+    QNetworkRequest request(getAvailableSampleTypesUrls_Str);
+    request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+    request.setRawHeader("Accept", "application/json");
+
+    // make request
+    QNetworkReply *reply = nam->get(request);
+    printd("response : %s\n", getAvailableSampleTypesUrls_Str.toStdString().c_str());
+    //Example: Reply List of URLs
+    //Example: https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/samples/{type-id}
+
+    // blocking request
+    QEventLoop loop;
+    connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+    loop.exec();
+
+    // if successful, lets unpack
+    int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+    printd("fetch response: %d: %s \n", reply->error(), reply->errorString().toStdString().c_str());
+    printd("HTTP response status code: %d \n", statusCode);
+
+    // Example: https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/samples/{type-id}
+    // Returns a list of hyperlinks to available exercise sample types
+    QByteArray getAvailableSampleTypesUrls_Ary = reply->readAll();
+    printd("samples url array : %s \n", getAvailableSampleTypesUrls_Ary.toStdString().c_str());
+    printd("amount of sample types: %d \n", getAvailableSampleTypesUrls_Ary.size()); // size is nonsense, or amount signs in string
+    //printd("QByteArray of sample type urls from exercise: %s \n", getAvailableSampleTypesUrls_Ary.toStdString().c_str());
+
+    /* Example Array
+    {
+      "samples": [
+        "https://www.polaraccesslink.com/v3/users/12/exercise-transactions/34/exercises/56/samples/0",
+        "https://www.polaraccesslink.com/v3/users/12/exercise-transactions/34/exercises/56/samples/3"
+      ]
+    }
+    */
+
+    // parse JSON payload
+    QJsonParseError getAvailableSampleTypesUrls_Doc_parseError;
+    QJsonDocument getAvailableSampleTypesUrls_Doc = QJsonDocument::fromJson(getAvailableSampleTypesUrls_Ary, &getAvailableSampleTypesUrls_Doc_parseError);
+    //qDebug() << "addSamples - Document Error Number: " << getAvailableSampleTypesUrls_Doc_parseError.error << " - Document Error String: " << getAvailableSampleTypesUrls_Doc_parseError.errorString();
+    //qDebug() << "addSamples - Document list of urls: " << getAvailableSampleTypesUrls_Doc;
+
+    // https://www.polar.com/accesslink-api/?shell#exercise-sample-types
+    // List of urls to available samples -> array
+
+    // QJsonArrays declared before if-statments, usage see down below
+    // https://stackoverflow.com/questions/13337529/using-variables-outside-of-an-if-statement/13337565
+    QJsonArray combinedStream_Ary; // fetches all provided streams and adds time stream
+    QJsonObject sampleStream_Obj; // filled with all available samples besides not provided  and added to QJsonArray streams
+    QJsonObject timeStream_Obj; // timeStream_Obj will be created seperatly, but gets number of datapoints from heartrate sample, with is always provided and added to QJsonArray streams
+    int numberOfAvailableSampleTyps = 0; // amount of available Sample Types, default is set to zero
+    int timeSamplesLoopNumber = 0; // is set in after available sample Types are figured out, default is set to zero
+
+    if (getAvailableSampleTypesUrls_Doc_parseError.error == QJsonParseError::NoError) {
+
+        QJsonObject getAvailableSampleTypesUrls_Obj = getAvailableSampleTypesUrls_Doc.object();
+        //qDebug() << "addSamples - Samples Exercise - Object url sample exercises: " << getAvailableSampleTypesUrls_Obj;
+
+        QJsonArray sampleTypesfromExercise_Ary = getAvailableSampleTypesUrls_Obj["samples"].toArray();
+        //qDebug() << "addSamples - Samples Exercise - Array of Sample Urls: " << sampleTypesfromExercise_Ary;
+
+        // How many Sample Types are available?
+        numberOfAvailableSampleTyps = sampleTypesfromExercise_Ary.size();
+        printd("sampleTypes - available Amount: %d\n", numberOfAvailableSampleTyps);
+
+        // set timeStream_Obj Loop number
+        timeSamplesLoopNumber = numberOfAvailableSampleTyps + 1;
+        printd("timeStream - loopnumber: %d\n", timeSamplesLoopNumber);
+
+        // getting sample type
+        // https://www.polar.com/accesslink-api/?shell#exercise-sample-types
+        // seperate sample urls and get samples data and additional information
+        QString sampleUrl_Str;
+
+        // loop number of of actually aquired sample = actualSampleLoopNumber
+        for(int actualSampleLoopNumber = 0; actualSampleLoopNumber < numberOfAvailableSampleTyps; actualSampleLoopNumber++) {
+            int loopCounterSampleTypes = actualSampleLoopNumber + 1; // amount of Samples counts from one
+            sampleUrl_Str = sampleTypesfromExercise_Ary[actualSampleLoopNumber].toString();
+            printd("actualSampleLoopNumber: %d / %d - sampleUrl_String - Url to sample-series: %s \n",loopCounterSampleTypes, numberOfAvailableSampleTyps, sampleUrl_Str.toStdString().c_str());
+
+            // Sample URL is provided in
+            // Example: GET https://www.polaraccesslink.com//v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/samples/{type-id}
+
+            // request using the bearer token
+            QNetworkRequest request(sampleUrl_Str);
+            request.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+            request.setRawHeader("Accept", "application/json");
+
+            // make request
+            QNetworkReply *reply = nam->get(request);
+            printd("response : %s\n", getAvailableSampleTypesUrls_Str.toStdString().c_str());
+
+            // blocking request
+            QEventLoop loop;
+            connect(reply, SIGNAL(finished()), &loop, SLOT(quit()));
+            loop.exec();
+
+            // if successful, lets unpack
+            int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+            printd("fetch response: %d: %s\n", reply->error(), reply->errorString().toStdString().c_str());
+            printd("actualSampleLoopNumber: %d / %d \n",loopCounterSampleTypes, numberOfAvailableSampleTyps);
+            printd("HTTP response status code: %d \n", statusCode);
+
+            // no bracktes []
+            QByteArray sampletype_Ary = reply->readAll();
+            //printd("actualSampleLoopNumber: %d / %d - sampletype_Array: %s \n",loopCounterSampleTypes, numberOfAvailableSampleTyps, sampletype_Ary.toStdString().c_str());
+
+            // parse JSON payload
+            QJsonParseError sampletype_Doc_parseError;
+            QJsonDocument sampletype_Doc;
+            sampletype_Doc = QJsonDocument::fromJson(sampletype_Ary, &sampletype_Doc_parseError);
+            //qDebug() << "addSamples - loop actualSampleLoopNumber:"<< loopCounterSampleTypes <<"/"<< numberOfAvailableSampleTyps << " - sampletype_Document - Error Number:" << sampletype_Doc_parseError.error << " - sampletype_Document - Error String: " << sampletype_Doc_parseError.errorString();
+            //qDebug() << "addSamples - loop actualSampleLoopNumber:"<< loopCounterSampleTypes <<"/"<< numberOfAvailableSampleTyps << " - sampletype_Document:" << sampletype_Doc;
+            //printd("sampletype_Doc: %s \n", sampletype_Doc.toJson().toStdString().c_str());
+            printd("sampletype_Doc - Error Number: %d - Error String: %s \n", sampletype_Doc_parseError.error, sampletype_Doc_parseError.errorString().toStdString().c_str());
+
+            if (sampletype_Doc_parseError.error == QJsonParseError::NoError) {
+                // we first collect all provided samples
+                sampleStream_Obj = PolarFlow::createSampleStream(sampletype_Doc, actualSampleLoopNumber, timeSamplesLoopNumber);
+                //qDebug() << "addSamples - loop loopCounterSampleTypes:" << loopCounterSampleTypes <<"/"<< numberOfAvailableSampleTyps <<" - sampleStream_Obj:" << sampleStream_Obj;
+                //printd("creating  Stream-Object without TimeSampleStream - actual loopnumber: %d / %d\n", loopCounterSampleTypes, sampleStream_Obj.size());
+                printd("creating Stream-Object without TimeSampleStream - actual loopnumber: %d / %d\n", loopCounterSampleTypes, numberOfAvailableSampleTyps);
+
+                // and save them into one Array
+                combinedStream_Ary.append(sampleStream_Obj);
+                //qDebug() << "addSamples - loop loopCounterSampleTypes:" << loopCounterSampleTypes <<"/"<< numberOfAvailableSampleTyps <<" - streams:" << combinedStream_Ary;
+                //printd("appending to combined Stream (endsize: %d) without timeStream - actual loopnumber: %d\n", combinedStream_Ary.size(), loopCounterSampleTypes);
+                printd("appending to combined Stream (endsize: %d) without timeStream - actual loopnumber: %d\n", numberOfAvailableSampleTyps, loopCounterSampleTypes);
+            } // close doc parser error
+
+        } // close for actualSampleLoopNumber
+        printd("combined Stream (size) without timeStream %d \n", combinedStream_Ary.size());
+
+        // for correct importing we need a time stream
+        // define an empty Json Document for not-provided time stream
+        QJsonDocument emptyForTimestream_Doc;
+
+        // fill QJsonObject with time data -> RideFile::secs
+        printd("creating TimeStream\n");
+        timeStream_Obj = PolarFlow::createSampleStream(emptyForTimestream_Doc, timeSamplesLoopNumber, timeSamplesLoopNumber);
+
+        // and prepend it as first stream in QJsonArray streams
+        printd("adding TimeStream to existing combined Stream\n");
+        combinedStream_Ary.prepend(timeStream_Obj);
+        //printd("streams now with time: %s", combinedStream_Ary);
+        //printd("combined Stream (endsize %d) now with timeStream - actual loopnumber: %d\n", combinedStream_Ary.size(), timeSamplesLoopNumber);
+
+        //printd("combinedStream_Array: % \n", combinedStream_Ary.toVariantList());
+        //qDebug() << "combinedStream_Ary - Array of Sample Urls: " << combinedStream_Ary;
+
+
+        // after having created a STRAVA like Stream we work with it
+        // mapping names used in the Polar Flow json response
+        // to the series names we use in GC
+        //printd("creating static struct for available RideFile seriestyps\n");
+        static struct {
+            RideFile::seriestype type;
+            const char *polarsampletypename; // polarsampletypename
+            double factor; // to convert from PolarFlow units to GC units
+        }
+        seriesnames[] = {
+                // seriestype,         polarsampletypename,     conversion factor -> RideFile.h/.cpp Line 350ff
+                { RideFile::secs,      "time",                  1.0f   }, // s (not provided by polar, needs to be created seperatly)
+                { RideFile::hr,        "heartrate",             1.0f   }, // bpm
+                { RideFile::kph,       "speed",                 1.0f   }, // km/h
+                { RideFile::cad,       "cadence",               1.0f   }, // rpm
+                { RideFile::alt,       "altitude",              1.0f   }, // m
+                { RideFile::watts,     "power",                 1.0f   }, // W
+                //{ RideFile::none,      "powerPedalingIndex",    0.0f   }, // %
+                { RideFile::lrbalance, "powerLeftRightBalance", 1.0f   }, // %
+                //{ RideFile::none,      "airPressure",           0.0f   }, // hpa
+                { RideFile::rcad,       "runningCadence",       1.0f   }, // spm // conversation factor "2" same Value as Strava
+                { RideFile::temp,       "temperature",          1.0f   }, // °C
+                { RideFile::km,         "distance",             0.001f }, // m
+                //{ RideFile::none,       "rrInterval",           0.001f }, // ms
+                { RideFile::none,       "",                     0.0f   } // must be last in list, stop condition for loop
+            };
+
+        // data to combine with ride
+        // define QList<polarSamples_Class> syntax
+        printd("creating class  for data\n");
+        class polarSamples_Class { // polarSamples_Class = strava_stream
+        public:
+            double factor; // for converting
+            RideFile::seriestype type;
+            QJsonArray samples;
+        };
+        // class example: 1.0f; RideFile::hr; 0,100,102,97,97,101,103,106,96,89,88,87
+
+        printd("creating a QList for each series");
+        // create a list of all the data we will work with
+        QList<polarSamples_Class> polarSampleClassData_QLst;
+        //qDebug() << "addSamples - Samples - loop i:" << loopCounterSampleTypes <<"- data: " << polarSampleClassData_QLst;
+
+        // running through combined stream and fill the QLists
+        for(int fillQListsLoop=0; fillQListsLoop<combinedStream_Ary.size(); fillQListsLoop++) {
+            QJsonObject combinedStream_Obj = combinedStream_Ary.at(fillQListsLoop).toObject();
+            QString type = combinedStream_Obj["type"].toString();
+            //printd("filling QList with combinedStream data (Loop: %d / %d) - exercise sample type type: %s\n", fillQListsLoop + 1, combinedStream_Ary.size(), type.toStdString().c_str());
+
+            for(int seriesLoop=0; seriesnames[seriesLoop].type != RideFile::none; seriesLoop++) {
+                QString name = seriesnames[seriesLoop].polarsampletypename;
+                printd("series name: %s - seriesLoop: %d - fillQListsLoop: %d\n", name.toStdString().c_str(), seriesLoop, fillQListsLoop);
+                polarSamples_Class add;
+
+                // running through series
+                if (type == name) {
+                    add.factor = seriesnames[seriesLoop].factor;
+                    add.type = seriesnames[seriesLoop].type;
+                    add.samples = combinedStream_Obj["data"].toArray();
+                    printd("running through known series %s - seriesloop %d - fillQListloop %d\n", name.toStdString().c_str(), seriesLoop, fillQListsLoop);
+                    printd("and fill in data from commbinedStream data-Array - %d\n", combinedStream_Obj["data"].toArray().size());
+                    //qDebug() << "addSamples - seriesLoop: " << seriesLoop << "- streams factor:" << seriesnames[seriesLoop].factor;
+                    //qDebug() << "addSamples - seriesLoop: " << seriesLoop << "- streams type:" << seriesnames[seriesLoop].type;
+                    //qDebug() << "addSamples - seriesLoop: " << seriesLoop << "- streams samples size:" << combinedStream_Obj["data"].toArray().size();
+                    //qDebug() << "addSamples - seriesLoop: " << seriesLoop << "- streams samples:" << combinedStream_Obj["data"].toArray();
+
+                    polarSampleClassData_QLst << add;
+                    //printd("running through known series %", polarSampleClassData_QLst);
+                    //qDebug() << "addSamples - seriesLoop: " << seriesLoop << "- polarSampleClassData_QLst : " << polarSampleClassData_QLst;
+                    //printd("running through known series %s done - seriesloop %d - fillQListloop %d\n", name.toStdString().c_str(), seriesLoop, fillQListsLoop);
+                    break; // breaks to seriesloop loop
+                }
+                // close running through series if type name
+            } // close for seriesLoop
+            printd("combining samples  ended\n\n");
+
+        }
+        // close if loop fillQListsLoop
+
+        bool end = false;
+        int index = 0;
+
+        //printd("adding data to Ridefile from each Polar Sample Class (amount classes: %d)\n", polarSampleClassData_QLst.size());
+        do {
+            RideFilePoint add;
+            //printd("filling Ridefile - do-while: %d - list size: %d \n", index, polarSampleClassData_QLst.size());
+
+            // move through streams if they're waiting for this point
+            foreach(polarSamples_Class polarSampleClass_Element, polarSampleClassData_QLst) {
+
+                // if this stream still has List of data to consume
+                if (index < polarSampleClass_Element.samples.count()) {
+                    //printd("there are more elements in series list - list index number: (%d / %d)\n", index + 1, polarSampleClass_Element.samples.count());
+                    // latitude and longitude is provided in gpx file
+                    //printd("add all other besides latitude and longitude - list index number %d\n", index+1);
+                    // hr, distance et al
+                    double value = polarSampleClass_Element.factor * polarSampleClass_Element.samples.at(index).toDouble();
+                    // this is one for us, update and move on
+                    add.setValue(polarSampleClass_Element.type, value);
+                    //qDebug() << "addSamples - do-while"<< index << "/" << polarSampleClass_Element.samples.count()  << "- else add polarSampleClass_Element.type, value:" << polarSampleClass_Element.type << ", " << value;
+                }
+                // close if polarSampleClass_Element
+                else {
+                    printd("no more elements found in series list - list index number %d\n", index);
+                    end = true;
+                }
+                // close else
+                }
+            // close foreach
+
+            //printd("adding element to Ridefile:Series - loop %d\n", index); //%s", polarSampleClassData_QLst.samples.at(index));
+            ret->appendPoint(add); // example: ret->appendPoint(RideFile::hr, 182)
+            //printd("do-while streamSize %d \n", polarSampleClass_Element.size());
+            //qDebug() << "addSamples - do-while" << index << "- ret:" << ret;
+            index++;
+
+        }
+        while (!end);
+        printd("do-while - ended with index: %d\n", index); // << "- ret:" << ret;
+        printd("all samples added - end\n");
+
+    }
+    // close if getAvailableSampleTypesUrls_Doc_parseError
+}
+
+QString
+PolarFlow30D::getFile(QString exerciseId, QString filetype, QDateTime starttime, QString detailedSportInfo_Str)
+{
+    // https://www.polar.com/accesslink-api/?shell#get-gpx
+    // returns training session in GPX (GPS Exchange format)
+    // https://www.polar.com/accesslink-api/?shell#get-tcx
+    // returns gzipped TCX
+    // https://www.polar.com/accesslink-api/?shell#get-fit-beta
+    // returns FIT file
+
+    // Status Codes for available Data
+    int dataAvailable = 200;
+
+    printd("GPX / TCX / Fit beta - start \n");
+
+    printd("getFile \n");
+
+    printd("ExerciseID: %s \n", exerciseId.toStdString().c_str());
+
+    QString token = getSetting(GC_POLARFLOW_TOKEN, "").toString();
+
+    QString transaction_id_Str = getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString();
+    printd("transaction_id_String: %s \n", transaction_id_Str.toStdString().c_str());
+
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/gpx
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/tcx
+    // RequestURL: GET https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/fit
+
+    QString filename;
+
+    // first filetype GPX
+    if (filetype == "gpx") {
+
+        QString get_GPX_Str;
+        get_GPX_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/gpx")
+                          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                          .arg(exerciseId);
+        printd("GPX - URL: %s \n", get_GPX_Str.toStdString().c_str());
+
+        // request using the bearer token, application/gpx+xml
+        QNetworkRequest requestGPX(get_GPX_Str);
+        requestGPX.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+        requestGPX.setRawHeader("Accept", "application/gpx+xml");
+
+        // make request
+        QNetworkReply *replyGPX = nam->get(requestGPX);
+        printd("response : %s\n", get_GPX_Str.toStdString().c_str());
+        // Example: Reply List of URLs /v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/gpx
+
+        // blocking request
+        QEventLoop loopGPX;
+        connect(replyGPX, SIGNAL(finished()), &loopGPX, SLOT(quit()));
+        loopGPX.exec();
+
+        // if successful, lets unpack
+        int statusCodeGPX = replyGPX->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        printd("fetch response: %d: %s\n", replyGPX->error(), replyGPX->errorString().toStdString().c_str());
+        printd("GPX - Samples - HTTP response status code: %d \n", statusCodeGPX);
+
+        QByteArray get_GPX_Ary = replyGPX->readAll();
+        //qDebug() << "get File - GPX - reply:" << reply;
+        //printd("GPX - QByteArray: %s \n", get_GPX_Ary.toStdString().c_str());
+
+        if (statusCodeGPX == dataAvailable) {
+            QString filenameGPX;
+            //PolarFlow pf_instance;
+            //filenameGPX = saveFileBT(get_GPX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+            filenameGPX = saveFile(get_GPX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+            //filenameGPX = pf_instance.saveFile(get_GPX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+            printd("GPX - filename: %s \n", filenameGPX.toStdString().c_str());
+            printd("GPX end \n");
+            filename = filenameGPX;
+        } else filename = "noContent";
+    } // close filetype gpx
+
+    // second file TCX
+    if (filetype == "tcx") {
+        QString get_TCX_Str;
+        get_TCX_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/tcx")
+                          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                          .arg(exerciseId);
+        printd("TCX - URL: %s \n", get_TCX_Str.toStdString().c_str());
+
+        // request using the bearer token, application/vnd.garmin.tcx+xml
+        QNetworkRequest requestTCX(get_TCX_Str);
+        requestTCX.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+        requestTCX.setRawHeader("Accept", "application/vnd.garmin.tcx+xml");
+
+        // make request
+        QNetworkReply *replyTCX = nam->get(requestTCX);
+        printd("response : %s\n", get_TCX_Str.toStdString().c_str());
+        // Example: Reply List of URLs /v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/tcx
+
+        // blocking request
+        QEventLoop loopTCX;
+        connect(replyTCX, SIGNAL(finished()), &loopTCX, SLOT(quit()));
+        loopTCX.exec();
+
+        // if successful, lets unpack
+        int statusCodeTCX = replyTCX->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        printd("fetch response: %d: %s\n", replyTCX->error(), replyTCX->errorString().toStdString().c_str());
+        printd("TCX - HTTP response status code: %d \n", statusCodeTCX);
+
+
+        QByteArray get_TCX_Ary = replyTCX->readAll();
+        //printd("page : %s\n", get_TCX_Ary.toStdString().c_str());
+
+        if (statusCodeTCX == dataAvailable) {
+            QString filenameTCX;
+            filenameTCX = PolarFlow::saveFile(get_TCX_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+
+            printd("TCX - filename: %s \n", filenameTCX.toStdString().c_str());
+            printd("TCX - end \n");
+            filename = filenameTCX;
+        } else filename = "noContent";
+    } // close filetype tcx
+
+    // third file FIT Beta
+    if (filetype == "fit") {
+        QString get_FIT_Str;
+        get_FIT_Str = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4/fit")
+                          .arg(getSetting(GC_POLARFLOW_URL, "https://www.polaraccesslink.com").toString())
+                          .arg(getSetting(GC_POLARFLOW_USER_ID, "").toString())
+                          .arg(getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString())
+                          .arg(exerciseId);
+        printd("FIT Beta - URL-List Samples: %s \n", get_FIT_Str.toStdString().c_str());
+
+        // request using the bearer token, */*
+        QNetworkRequest requestFIT(get_FIT_Str);
+        requestFIT.setRawHeader("Authorization", (QString("Bearer %1").arg(token)).toLatin1());
+        requestFIT.setRawHeader("Accept", "*/*");
+
+        // make request
+        QNetworkReply *replyFIT = nam->get(requestFIT);
+        printd("response : %s\n", get_FIT_Str.toStdString().c_str());
+        // Example: Reply List of URLs /v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}/fit
+
+        // blocking request
+        QEventLoop loopFIT;
+        connect(replyFIT, SIGNAL(finished()), &loopFIT, SLOT(quit()));
+        loopFIT.exec();
+
+        // if successful, lets unpack
+        int statusCodeFIT = replyFIT->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+        printd("fetch response: %d: %s\n", replyFIT->error(), replyFIT->errorString().toStdString().c_str());
+        printd("FIT Beta - Samples - HTTP response status code: %d \n", statusCodeFIT);
+
+        QByteArray get_FIT_Ary = replyFIT->readAll();
+        //printd("FIT Beta - QByteArray: %s \n", getAvailableSampleTypesUrls_Ary.toStdString().c_str());
+
+        if (statusCodeFIT == dataAvailable) {
+            QString filenameFIT;
+            filenameFIT = PolarFlow::saveFile(get_FIT_Ary, exerciseId, filetype, starttime, detailedSportInfo_Str);
+
+            printd("FIT Beta - filename: %s \n", filenameFIT.toStdString().c_str());
+            printd("FIT Beta - close \n");
+            filename = filenameFIT;
+        } else filename = "noContent";
+    } // close filetype fit beta
+
+    // filename to return
+    printd("returned filename: %s \n", filename.toStdString().c_str());
+    printd("File - end \n");
+    return filename;
+}
+
 QByteArray*
-PolarFlow::prepareResponse(QByteArray* data, QString &name)
+PolarFlow30D::prepareResponse(QByteArray* data, QString &name)
 {
     printd("prepareResponse - start \n");
     //qDebug() << "prepareResponse data:" << data;
@@ -468,7 +982,7 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
     QString typeOfImporting; // "File|Samples"
     typeOfImporting = POLARFLOW_IMPORTTYPE;
     //typeOfImporting = "File";
-    //printd("PolarFlow::prepareResponse: %s \n", originalName);
+    //printd("prepareResponse: %s \n", originalName);
 
     QJsonParseError parseError;
     QJsonDocument get_exercise_summary_Doc = QJsonDocument::fromJson(data->constData(), &parseError);
@@ -612,10 +1126,10 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
             }
 
             // add the rest of available excercise informations
-            addExerciseSummaryInformation(rideImport, get_exercise_summary_Obj);
+            PolarFlow::addExerciseSummaryInformation(rideImport, get_exercise_summary_Obj);
 
             //printd("prepareResponse - fixSmartRecording: %s \n", rideImport);
-            fixSmartRecording(rideImport);
+            PolarFlow::fixSmartRecording(rideImport);
             JsonFileReader rideImportReader;
             data->clear();
             //What is included? (Context *context, const RideFile *ride, bool withAlt, bool withWatts, bool withHr, bool withCad)
@@ -638,7 +1152,7 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
             }
 
             // add rest of metadata and return start time as value
-            addExerciseSummaryInformation(rideWithSamples, get_exercise_summary_Obj);
+            PolarFlow::addExerciseSummaryInformation(rideWithSamples, get_exercise_summary_Obj);
 
             // Adding SampleData to Ridefile
             //addSamples(rideWithSamples, exercise_id_Str, filenameWithPathSuffix);
@@ -666,7 +1180,7 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
              } //close laps if
             */
 
-            fixSmartRecording(rideWithSamples);
+            PolarFlow::fixSmartRecording(rideWithSamples);
             //printd("prepareResponse - fixSmartRecording: %s \n", rideWithSamples);
             JsonFileReader rideWithSamplesReader;
 
@@ -717,11 +1231,11 @@ PolarFlow::prepareResponse(QByteArray* data, QString &name)
 }
 
 // development put on hold - AccessLink API compatibility issues with Desktop applications
-//#if 0
-static bool addPolarFlow() {
-    CloudServiceFactory::instance().addService(new PolarFlow(NULL));
+#if 0
+static bool addPolarFlow30D() {
+    CloudServiceFactory::instance().addService(new PolarFlow30D(NULL));
     return true;
 }
 
-static bool add = addPolarFlow();
-//#endif
+static bool add = addPolarFlow30D();
+#endif
