@@ -42,7 +42,7 @@ public:
     CloudService *clone(Context *context) { return new PolarFlowBT(context); }
     ~PolarFlowBT();
 
-    QString id() const { return "Polar Flow BT"; }
+    QString id() const { return "PolarFlow"; }
     QString uiName() const { return tr("Polar Flow By Transaction"); }
     QString description() const { return (tr("Download from the popular Polar website.")); }
     QImage logo() const { return QImage(":images/services/polarflow.png"); }
@@ -73,7 +73,6 @@ public:
     //QList<CloudServiceEntry*> readdir(QString path, QStringList &errors, QDateTime from, QDateTime to);
 
 public slots:
-
     // getting data
     void readyRead(); //
     void readFileCompleted(); //
