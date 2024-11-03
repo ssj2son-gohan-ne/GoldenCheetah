@@ -42,8 +42,6 @@
 #include "mvjson.h"
 #include "Units.h"
 #include "RideImportWizard.h"
-//#include "MergeActivityWizard.h"
-//#include "MainWindow.h"
 #include <QByteArray>
 #include <QHttpMultiPart>
 #include <QJsonDocument>
@@ -138,7 +136,7 @@ PolarFlowBT::open(QStringList &errors) //open transaction
     // Training data - create transaction and save temporarily transaction-id
     // https://www.polar.com/accesslink-api/?shell#create-transaction-2
     //
-    printd("PolarFlow::open\n");
+    printd("PolarFlowBT::open\n");
     // do we have a token
     QString token = getSetting(GC_POLARFLOW_TOKEN, "").toString();
     if (token == "") {
@@ -245,7 +243,7 @@ PolarFlowBT::commit(QStringList &errors) //commit transaction
     // commit transaction and delete transaction id
     // https://www.polar.com/accesslink-api/?shell#commit-transaction-2
     // prerquisitory: there has to be an open transaction (Token, TransactionID)
-    printd("PolarFlow::commit - start\n");
+    printd("start\n");
 
     // do we have a token
     QString token = getSetting(GC_POLARFLOW_TOKEN, "").toString();
@@ -322,7 +320,7 @@ PolarFlowBT::readdir(QString path, QStringList &errors)
     // use transactionID getting a list of exercises
     // https://www.polar.com/accesslink-api/?shell#list-exercises
 
-    printd("PolarFlow::readdir - start (%s)\n", path.toStdString().c_str());
+    printd("start (%s)\n", path.toStdString().c_str());
 
     QList<CloudServiceEntry*> returning;
 
@@ -576,10 +574,10 @@ PolarFlowBT::readdir(QString path, QStringList &errors)
 bool
 PolarFlowBT::readFile(QByteArray *data, QString remotename, QString remoteid)
 {
-    printd("readFile - start\n");
+    printd("start\n");
     // create alias
     QString exercise_id_Str = remoteid;
-    printd("PolarFlow::readFile remotename: %s - remoteid: %s \n", remotename.toStdString().c_str(), exercise_id_Str.toStdString().c_str());
+    printd("remotename: %s - remoteid: %s \n", remotename.toStdString().c_str(), exercise_id_Str.toStdString().c_str());
     printd("readFile - exercise_id_String alias: %s\n", exercise_id_Str.toStdString().c_str());
 
     // do we have a token ?
@@ -590,7 +588,7 @@ PolarFlowBT::readFile(QByteArray *data, QString remotename, QString remoteid)
     QString transaction_id = getSetting(GC_POLARFLOW_TRANSACTION_ID, "").toString();
     if (transaction_id == "") return false;
 
-    // connect to direct to exercise via remoteid from PolarFlow::readDir
+    // connect to direct to exercise via remoteid from readDir
     // https://www.polaraccesslink.com/v3/users/{user-id}/exercise-transactions/{transaction-id}/exercises/{exercise-id}
     QString url;
     url = QString("%1/v3/users/%2/exercise-transactions/%3/exercises/%4")
@@ -968,7 +966,7 @@ PolarFlowBT::getFile(QString exerciseId, QString filetype, QDateTime starttime, 
 
     printd("GPX / TCX / Fit beta - start \n");
 
-    printd("PolarFlow::getFile \n");
+    printd("getFile \n");
 
     printd("ExerciseID: %s \n", exerciseId.toStdString().c_str());
 
@@ -1137,7 +1135,7 @@ PolarFlowBT::prepareResponse(QByteArray* data, QString &name)
     QString typeOfImporting; // "File|Samples"
     typeOfImporting = POLARFLOW_IMPORTTYPE;
     //typeOfImporting = "File";
-    //printd("PolarFlow::prepareResponse: %s \n", originalName);
+    //printd("prepareResponse: %s \n", originalName);
 
     QJsonParseError parseError;
     QJsonDocument get_exercise_summary_Doc = QJsonDocument::fromJson(data->constData(), &parseError);
